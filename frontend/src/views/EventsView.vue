@@ -2,9 +2,9 @@
 </script>
 
 <template>
-  <h1 class="heading">Home</h1>
+  <h1 class="heading">Events</h1>
   <p>
-    Looking to join a community? Discover exciting HangoutSG events happening near you! Explore a
+    Looking for something to do? Discover exciting HangoutSG events happening near you! Explore a
     wide range of hobbies and meet fellow enthusiasts. Find your next adventure today!
   </p>
 
