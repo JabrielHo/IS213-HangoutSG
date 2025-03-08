@@ -2,25 +2,21 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from user_model import db, User
 import re
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
-# Initialize Flask app
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
 
 email_pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
-# Database config
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize SQLAlchemy
 db.init_app(app)
-
-with app.app_context():
-    db.create_all()
-
 
 # Register user
 @app.route("/register", methods=["POST"])

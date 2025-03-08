@@ -8,7 +8,6 @@ db = SQLAlchemy()
 
 singapore_tz = pytz.timezone('Asia/Singapore')
 
-
 class User(db.Model):
     __tablename__ = "users"
 
