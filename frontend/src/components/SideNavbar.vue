@@ -107,11 +107,11 @@ const hobbies = [
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-            <img :src="user?.picture" alt="" width="32" height="32" class="rounded-circle me-2" />
+            <img :src="user.picture" alt="" width="32" height="32" class="rounded-circle me-2" />
           </a>
           <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
             <li><router-link class="dropdown-item" to="/profile">Profile</router-link></li>
-            <li><a class="dropdown-item" href="#">Reported Posts</a></li>
+            <li v-if="user['https://hangoutsg.com/roles'].includes('admin')"><a class="dropdown-item" href="#">Content Moderation</a></li>
             <li><hr class="dropdown-divider" /></li>
             <li><LogoutButton /></li>
           </ul>

@@ -3,4 +3,4 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["python", "./user_service.py"]
+CMD ["python", "./inbox_service.py"]
