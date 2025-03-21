@@ -32,7 +32,7 @@ def get_management_api_token():
     data = response.json()
     return data["access_token"]
 
-@app.route("/api/users/<user_id>", methods=["GET"])
+@app.route("/api/users/<string:user_id>", methods=["GET"])
 def get_user(user_id):
     try:
         # Get management API token

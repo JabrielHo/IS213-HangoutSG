@@ -1,0 +1,65 @@
+_format_version: "3.0"
+_transform: false
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - http://localhost:5173
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - Authorization
+      exposed_headers:
+        - X-Auth-Token
+      credentials: true
+      max_age: 3600
+      preflight_continue: false
+
+services:
+  - name: community_service
+    url: http://community_service:5001
+    routes:
+      - name: community_base_route
+        paths:
+          - /api/community
+        methods:
+          - GET
+          - POST
+        strip_path: false
+        preserve_host: true
+      
+      - name: community_specific_route
+        paths:
+          - /api/community/\d+
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+
+      - name: community_name_specific_route
+        paths:
+          - /api/community/name/.*
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+        
+      - name: community_creator_route
+        paths:
+          - /api/community/creator/.*
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true

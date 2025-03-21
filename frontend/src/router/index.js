@@ -32,7 +32,7 @@ const router = createRouter({
     {
       path: '/c/:community',
       name: 'community',
-      component: () => import('../views/ForumView.vue'),
+      component: () => import('../views/CommunityView.vue'),
     },
     // {
     //   path: '/about',

@@ -1,11 +1,114 @@
 <script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth0 } from '@auth0/auth0-vue'
+const { user } = useAuth0()
+
+const router = useRouter()
+const community = ref({
+  name: '',
+  description: '',
+})
+
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+
+const submitForm = async () => {
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const requestBody = {
+      ...community.value,
+      creator_id: user.value?.sub || ''
+    }
+
+    console.log(requestBody)
+    const response = await fetch('http://localhost:8000/api/community', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to create community')
+    }
+
+    const result = await response.json()
+    console.log('Community created successfully:', result)
+    
+    await new Promise(resolve => setTimeout(resolve, 500))
+    if (result && result.data) {
+      const communityName = result.data.name || community.value.name
+      router.push('/c/' + communityName.toLowerCase())
+    } else {
+      router.push('/c/' + community.value.name.toLowerCase())
+    }
+  } catch (error) {
+    console.error('Error creating community:', error)
+    errorMessage.value = error.message || 'An error occurred while creating the community'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
-  <h1 class="heading">Create Community</h1>
-  <hr />
+  <div class="container mt-4">
+    <h1 class="heading mb-3">Create Community</h1>
+    <hr />
+
+    <div v-if="errorMessage" class="alert alert-danger" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <div class="row">
+      <form @submit.prevent="submitForm">
+        <div class="mb-3">
+          <label for="communityName" class="form-label">Community Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="communityName"
+            v-model="community.name"
+            minlength="3"
+            maxlength="21"
+            required
+          />
+          <div class="form-text">Minimum 3 characters & Maximum 21 characters</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="communityDescription" class="form-label">Description</label>
+          <textarea
+            class="form-control"
+            id="communityDescription"
+            v-model="community.description"
+            rows="4"
+            required
+          ></textarea>
+        </div>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button type="button" class="btn btn-outline-secondary me-md-2" @click="router.back()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+            <span
+              v-if="isSubmitting"
+              class="spinner-border spinner-border-sm me-1"
+              role="status"
+              aria-hidden="true"
+            ></span>
+            {{ isSubmitting ? 'Creating...' : 'Create Community' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>
 
 <style>
 </style>
-

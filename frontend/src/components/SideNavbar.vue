@@ -82,20 +82,20 @@ const hobbies = ['MonsterHunter', 'Cycling', 'Running', 'Pokemon', 'Hiking', 'Sw
       </div>
 
       <!-- Show login/signup when not authenticated -->
-      <div v-else-if="!isAuthenticated" class="d-flex gap-2">
+      <div v-else-if="!isAuthenticated" class="d-flex gap-2 me-2">
         <LoginButton />
         <SignupButton />
       </div>
 
       <!-- Show user profile when authenticated -->
-      <div v-else class="dropdown">
+      <div v-else class="dropdown me-2">
         <a
           href="#"
           class="d-flex align-items-center text-white text-decoration-none"
           data-bs-toggle="dropdown"
           aria-expanded="false"
         >
-          <img :src="user.picture" alt="" width="32" height="32" class="rounded-circle me-2" />
+          <img :src="user.picture" alt="" width="32" height="32" class="rounded-circle" />
         </a>
         <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end text-small shadow">
           <li><router-link class="dropdown-item" to="/profile">Profile</router-link></li>
