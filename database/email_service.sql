@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS email_service;
 USE email_service;
 
 CREATE TABLE IF NOT EXISTS emails (
-    email_id INT AUTO_INCREMENT PRIMARY KEY,
+    email_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     user_id VARCHAR(50) NOT NULL,
     to_email VARCHAR(255) NOT NULL, 
     subject VARCHAR(255) NOT NULL,

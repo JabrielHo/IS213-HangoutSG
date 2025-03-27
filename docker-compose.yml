@@ -7,10 +7,15 @@ services:
     volumes:
       - ./database/inbox_service.sql:/docker-entrypoint-initdb.d/init_inbox_service.sql
       - ./database/community_service.sql:/docker-entrypoint-initdb.d/init_community_service.sql
-      - ./database/content_moderation.sql:/docker-entrypoint-initdb.d/init_content_moderation.sql
+      - ./database/content_moderation_service.sql:/docker-entrypoint-initdb.d/init_content_moderation_service.sql
+      - ./database/comment_service.sql:/docker-entrypoint-initdb.d/init_comment_service.sql
+      - ./database/post_service.sql:/docker-entrypoint-initdb.d/init_post_service.sql
+      - ./database/community_members_service.sql:/docker-entrypoint-initdb.d/init_community_members_service.sql
+      - ./database/email_service.sql:/docker-entrypoint-initdb.d/init_email_service.sql
+      # Uncomment after all SQL files done
+      # - mysql_data:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    command: --default-authentication-plugin=mysql_native_password
     networks:
       - app-network
       
@@ -95,3 +100,4 @@ networks:
 
 volumes:
   rabbitmq_data:
+  mysql_data:
