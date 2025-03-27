@@ -4,7 +4,7 @@ USE post_service;
 CREATE TABLE IF NOT EXISTS posts (
     post_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     community_id CHAR(36) NOT NULL,
-    author_id CHAR(36) NOT NULL,
+    author_id VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
     content TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

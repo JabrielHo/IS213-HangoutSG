@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from comments_model import db, Comment
+from comment_model import db, Comment
 from dotenv import load_dotenv
 import os
 
