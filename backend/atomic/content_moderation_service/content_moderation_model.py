@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import pytz
+import uuid
 
 db = SQLAlchemy()
 
@@ -9,9 +10,9 @@ singapore_tz = pytz.timezone('Asia/Singapore')
 class ContentModeration(db.Model):
     __tablename__ = 'flagged'
     
-    flag_id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, nullable=True)
-    comment_id = db.Column(db.Integer, nullable=True)
+    flag_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    post_id = db.Column(db.String(36), nullable=True)
+    comment_id = db.Column(db.String(36), nullable=True)
     flagged_by = db.Column(db.String(50), nullable=False)
     reason = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='pending')

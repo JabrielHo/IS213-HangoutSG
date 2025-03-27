@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import pytz
+import uuid
 
 db = SQLAlchemy()
 
@@ -9,7 +10,7 @@ singapore_tz = pytz.timezone("Asia/Singapore")
 class Email(db.Model):
     __tablename__ = "emails"
     
-    email_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = db.Column(db.String(50), nullable=False)
     to_email = db.Column(db.String(255), nullable=False) 
     subject = db.Column(db.String(255), nullable=False)

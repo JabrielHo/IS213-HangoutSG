@@ -11,7 +11,7 @@ class Post(db.Model):
 
     post_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     community_id = db.Column(db.String(36), nullable=False)
-    author_id = db.Column(db.String(36), nullable=False)
+    author_id = db.Column(db.String(50), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(singapore_tz))
