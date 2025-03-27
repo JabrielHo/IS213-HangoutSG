@@ -1,5 +1,4 @@
 services:
-  # MySQL container
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -8,28 +7,13 @@ services:
     volumes:
       - ./database/inbox_service.sql:/docker-entrypoint-initdb.d/init_inbox_service.sql
       - ./database/community_service.sql:/docker-entrypoint-initdb.d/init_community_service.sql
+      - ./database/content_moderation.sql:/docker-entrypoint-initdb.d/init_content_moderation.sql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - app-network
-
-  # phpMyAdmin container
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
-    links:
-      - mysql:db
-    ports:
-      - "80:80"
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    networks:
-      - app-network
-
-  # RabbitMQ service
+      
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -41,12 +25,10 @@ services:
     networks:
       - app-network
 
-  # Kong Gateway
   kong:
     image: kong/kong-gateway:3.9
     container_name: kong
     platform: linux/amd64
-    restart: always
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /etc/kong/routes.yaml
@@ -64,49 +46,48 @@ services:
     networks:
       - app-network
 
-  community_service:
-    build:
-      context: ./backend/atomic/community_service
-      dockerfile: Dockerfile
-    container_name: community_service
-    ports:
-      - "5001:5001" 
-    environment:
-      - DATABASE_URL=${DATABASE_URL}/community_service
-    depends_on:
-      - mysql
-    networks:
-      - app-network
+  # community_service:
+  #   build:
+  #     context: ./backend/atomic/community_service
+  #     dockerfile: Dockerfile
+  #   container_name: community_service
+  #   ports:
+  #     - "5001:5001" 
+  #   environment:
+  #     - DATABASE_URL=${DATABASE_URL}/community_service
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - app-network
       
-  inbox_service:
-    build:
-      context: ./backend/atomic/inbox_service
-      dockerfile: Dockerfile
-    container_name: inbox_service
-    ports:
-      - "5006:5006"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}/inbox_service
-    depends_on:
-      - mysql
-    networks:
-      - app-network
+  # inbox_service:
+  #   build:
+  #     context: ./backend/atomic/inbox_service
+  #     dockerfile: Dockerfile
+  #   container_name: inbox_service
+  #   ports:
+  #     - "5006:5006"
+  #   environment:
+  #     - DATABASE_URL=${DATABASE_URL}/inbox_service
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - app-network
       
-  # Frontend container
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - mysql
-      - inbox_service
-      - community_service
-      - kong
-    networks:
-      - app-network
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: frontend
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - mysql
+  #     - inbox_service
+  #     - community_service
+  #     - kong
+  #   networks:
+  #     - app-network
 
 networks:
   app-network:
