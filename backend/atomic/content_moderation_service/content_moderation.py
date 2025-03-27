@@ -3,8 +3,11 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import request
+import requests
 from datetime import datetime
 from content_moderation_model import db,ContentModeration
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
 load_dotenv()
 
 app = Flask(__name__)
@@ -19,13 +22,28 @@ db.init_app(app)
 def report_post(post_id):
     try:
         data = request.get_json()
-
+        poster_id = data['poster_id']
         user_id = data['user_id']
         post_id=data['post_id']
         reason = data.get('reason', 'No reason provided')
         timestamp = datetime.now()
+
+        response = requests.get(f'http://localhost:5003/api/posts/{post_id}') #change ltr to get post content
+        post_content = response.json().get('content')
+        sia = SentimentIntensityAnalyzer()
+        sentiment_score = sia.polarity_scores(post_content)
+        if sentiment_score['compound'] <= -0.5: 
+            isInappropriate = True  
+        isInappropriate = False
+
+        if not isInappropriate:
+           return jsonify({
+                "code": 200,
+                "message": "Post is appropriate and was not flagged"
+            }), 200
         # save to Database
         flag = ContentModeration(
+            poster_id=poster_id,
             post_id=post_id, 
             flagged_by=user_id,
             reason=reason,  
@@ -54,13 +72,29 @@ def report_post(post_id):
 def report_comment(comment_id):
     try:
         data = request.get_json()
-
+        poster_id = data['poster_id']
         user_id = data['user_id']
         comment_id=data['comment_id']
         reason = data.get('reason', 'No reason provided')
         timestamp = datetime.now()
+
+        response = requests.get(f'http://localhost:5004/api/comments/{comment_id}') #change ltr to get comment content
+        comment_content = response.json().get('content')
+        sia = SentimentIntensityAnalyzer()
+        sentiment_score = sia.polarity_scores(comment_content)
+        if sentiment_score['compound'] <= -0.5: 
+            isInappropriate = True  
+        isInappropriate = False
+
+        if not isInappropriate:
+           return jsonify({
+                "code": 200,
+                "message": "Comment is appropriate and was not flagged"
+            }), 200
+
         # save to Database
         flag = ContentModeration(
+            poster_id=poster_id,
             comment_id=comment_id, 
             flagged_by=user_id,
             reason=reason,  
@@ -83,55 +117,82 @@ def report_comment(comment_id):
             "message": f"An error occurred: {str(e)}"
         }), 500
     
-@app.route("/api/moderation/delete/post/<string:post_id>", methods=["DELETE"])
-def delete_post(post_id):
-    try:
-        #delete from db
-        flag = ContentModeration.query.filter_by(post_id=post_id).first()        
-        if not flag:
-            return jsonify({
-                "code": 404,
-                "message": f"Post with post_id {post_id} not found."
-            }), 404
-        db.session.delete(flag)
-        db.session.commit()
-
-        return jsonify({
-            "code": 200,
-            "message": f"Post with post_id {post_id} successfully deleted."
-        }), 200
-    except Exception as e:
-        print(f"Exception: {str(e)}")
-        return jsonify({
-            "code": 500,
-            "message": f"An error occurred: {str(e)}"
-        }), 500
-    
-@app.route("/api/report/delete/comment/<string:comment_id>", methods=["DELETE"])
-def delete_comment(comment_id):
-    try:
-        #delete from db
-        flag = ContentModeration.query.filter_by(comment_id=comment_id).first()        
-        if not flag:
-            return jsonify({
-                "code": 404,
-                "message": f"Comment with comment_id {comment_id} not found."
-            }), 404
-        db.session.delete(flag)
-        db.session.commit()
-
-        return jsonify({
-            "code": 200,
-            "message": f"Comment with comment_id {comment_id} successfully deleted."
-        }), 200
-    except Exception as e:
-        print(f"Exception: {str(e)}")
-        return jsonify({
-            "code": 500,
-            "message": f"An error occurred: {str(e)}"
-        }), 500
-
+@app.route("/api/moderation/delete/post/<string:post_id>", methods=["POST"]) 
+def delete_post(post_id): 
+    try: 
+        data=request.getjson() 
+        post_id=data["post_id"] 
+        #delete from db 
+        flag = ContentModeration.query.filter_by(post_id=post_id).first()         
+        if not flag: 
+            return jsonify({ 
+                "code": 404, 
+                "message": f"Post with post_id {post_id} not found." 
+            }), 404 
+        flag.isdeleted = True 
+        db.session.commit() 
+ 
+        return jsonify({ 
+            "code": 200, 
+            "message": f"Post with post_id {post_id} successfully deleted." 
+        }), 200 
+    except Exception as e: 
+        print(f"Exception: {str(e)}") 
+        return jsonify({ 
+            "code": 500, 
+            "message": f"An error occurred: {str(e)}" 
+        }), 500 
+     
+@app.route("/api/moderation/report/delete/comment/<string:comment_id>", methods=["POST"]) 
+def delete_comment(comment_id): 
+    try: 
+        data=request.getjson() 
+        comment_id=data["comment_id"] 
+        #delete from db 
+        flag = ContentModeration.query.filter_by(comment_id=comment_id).first()         
+        if not flag: 
+            return jsonify({ 
+                "code": 404, 
+                "message": f"Comment with comment_id {comment_id} not found." 
+            }), 404 
+        flag.isdeleted = True 
+        db.session.commit() 
+ 
+        return jsonify({ 
+            "code": 200, 
+            "message": f"Comment with comment_id {comment_id} successfully deleted." 
+        }), 200 
+    except Exception as e: 
+        print(f"Exception: {str(e)}") 
+        return jsonify({ 
+            "code": 500,"message": f"An error occurred: {str(e)}" 
+        }), 500 
+     
+@app.route("/api/moderation/get/", methods=["GET"]) 
+def get_all_reported(): 
+    try: 
+        flagged = ContentModeration.query.filter_by(isdeleted=False).all() 
+        if not flagged: 
+                return jsonify({ 
+                    "code": 404, 
+                    "message": "No reported content found." 
+                }), 404 
+             
+        flagged_content_list = [flag.json() for flag in flagged] 
+ 
+        return jsonify({ 
+                "code": 200, 
+                "message": "Successfully retrieved reported content", 
+                "flagged_content": flagged_content_list 
+            }), 200 
+     
+    except Exception as e: 
+        print(f"Exception: {str(e)}") 
+        return jsonify({ 
+            "code": 500, 
+            "message": f"An error occurred: {str(e)}" 
+        }), 500 
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(port=5007, debug=True)

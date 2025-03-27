@@ -17,6 +17,7 @@ class ContentModeration(db.Model):
     reason = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='pending')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(singapore_tz))
+    isdeleted = db.Column(db.Boolean, nullable=False, default=False)
     
     def __init__(self, flagged_by, reason, status='pending', post_id=None, comment_id=None):
         if (post_id and comment_id) or (not post_id and not comment_id):
@@ -35,5 +36,6 @@ class ContentModeration(db.Model):
             'flagged_by': self.flagged_by,
             'reason': self.reason,
             'status': self.status,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'isdeleted': self.isdeleted
         }

@@ -3,7 +3,6 @@ USE email_service;
 
 CREATE TABLE IF NOT EXISTS emails (
     email_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    user_id VARCHAR(50) NOT NULL,
     to_email VARCHAR(255) NOT NULL, 
     subject VARCHAR(255) NOT NULL,
     body TEXT NOT NULL,

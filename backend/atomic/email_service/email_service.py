@@ -56,7 +56,7 @@ def send_email():
         data = request.get_json()
 
         # Check for required fields
-        required_fields = ["user_id", "to_email", "subject", "body"]
+        required_fields = ["to_email", "subject", "body"]
         missing_fields = [field for field in required_fields if not data.get(field)]
 
         if missing_fields:
@@ -67,7 +67,6 @@ def send_email():
 
         # Save to database
         email = Email(
-            user_id=data["user_id"],
             to_email=data["to_email"],  
             subject=data["subject"],
             body=data["body"]
@@ -98,7 +97,7 @@ def send_email():
 
 # Uncomment for Docker
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002)
+    app.run(host="0.0.0.0", port=5008)
 
 # Start Flask app locally
 # if __name__ == "__main__":
