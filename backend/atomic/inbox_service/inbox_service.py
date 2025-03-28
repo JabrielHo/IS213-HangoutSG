@@ -27,7 +27,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 db.init_app(app)
 
-
 def start_consumer():
     consumer = MessageConsumer("inbox_messages", handle_inbox_message)
     consumer.start_consuming()
@@ -36,24 +35,62 @@ def start_consumer():
 # Message handler for RabbitMQ consumer
 def handle_inbox_message(message, routing_key):
     """
-    Process messages from the inbox queue
-
+    Process messages from the inbox queue with support for different message types:
+    
+    - Single recipient messages: { "type": "report_outcome", "receiver_id": "userId", "subject": "...", "content": "..." }
+    - Multi-recipient messages: { "type": "event_creation", "receiver_ids": ["userId1", "userId2"], "subject": "...", "content": "..." }
+    
     Args:
         message: The message payload from RabbitMQ
+        routing_key: The routing key used for the message
     """
     print(f"Processing inbox message: {message}")
-
-    required_fields = ["receiver_id", "subject", "content"]
-    if not all(field in message for field in required_fields):
-        print(f"Missing required fields in message: {message}")
+    
+    # Validate basic message structure
+    if "type" not in message:
+        print("Error: Message missing 'type' field")
         return
+        
+    message_type = message.get("type")
+    
+    # Process based on message type
+    if message_type == "event_creation":
+        # Multi-recipient message
+        if "receiver_ids" not in message or "subject" not in message or "content" not in message:
+            print(f"Error: Missing required fields for event_creation message: {message}")
+            return
+            
+        receiver_ids = message["receiver_ids"]
+        subject = message["subject"]
+        content = message["content"]
+        
+        # Send to each recipient
+        for receiver_id in receiver_ids:
+            _create_inbox_message(receiver_id, subject, content)
+            
+    elif message_type == "report_outcome":
+        # Single recipient message
+        if "receiver_id" not in message or "subject" not in message or "content" not in message:
+            print(f"Error: Missing required fields for {message_type} message: {message}")
+            return
+            
+        receiver_id = message["receiver_id"]
+        subject = message["subject"]
+        content = message["content"]
+        
+        _create_inbox_message(receiver_id, subject, content)
+        
+    else:
+        print(f"Warning: Unknown message type '{message_type}'")
 
+
+def _create_inbox_message(receiver_id, subject, content):
     with app.app_context():
         try:
             new_message = InboxMessage(
-                receiver_id=message["receiver_id"],
-                subject=message["subject"],
-                content=message["content"],
+                receiver_id=receiver_id,
+                subject=subject,
+                content=content,
                 status="unread",
             )
             db.session.add(new_message)
@@ -74,7 +111,6 @@ def handle_inbox_message(message, routing_key):
         except Exception as e:
             print(f"Error processing message: {str(e)}")
             db.session.rollback()
-
 
 # Mark as read
 @app.route("/api/inbox/read/<string:message_id>", methods=["POST"])
