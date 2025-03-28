@@ -12,6 +12,7 @@ class InboxMessage(db.Model):
 
     message_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     receiver_id = db.Column(db.String(50), nullable=False)
+    subject = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(singapore_tz))
     status = db.Column(db.String(20), default="unread")

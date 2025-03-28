@@ -7,7 +7,7 @@ import { useAuth0 } from '@auth0/auth0-vue'
 
 const { isAuthenticated, user, isLoading } = useAuth0()
 
-const hobbies = ['MonsterHunter', 'Cycling', 'Running', 'Pokemon', 'Hiking', 'Swimming', 'Reading']
+const hobbies = ['monsterhunter', 'cycling', 'running', 'pokemon', 'hiking', 'swimming', 'reading']
 </script>
 
 <template>
