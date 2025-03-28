@@ -135,24 +135,24 @@ def mark_as_read(message_id):
 # Get messages for a user
 @app.route("/api/inbox/<string:user_id>", methods=["GET"])
 def get_messages(user_id):
-    messages = InboxMessage.query.filter_by(receiver_id=user_id).all()
-
-    if not messages:
-        return jsonify([]), 200
-
-    return jsonify(
-        [
-            {
-                "message_id": m.message_id,
-                "receiver_id": m.receiver_id,
-                "subject": m.subject,
-                "content": m.content,
-                "status": m.status,
-                "created_at": m.created_at.isoformat(),
-            }
-            for m in messages
-        ]
-    )
+    try:
+        messages = InboxMessage.query.filter_by(receiver_id=user_id).all()
+        return jsonify(
+            [
+                {
+                    "message_id": m.message_id,
+                    "receiver_id": m.receiver_id,
+                    "subject": m.subject,
+                    "content": m.content,
+                    "status": m.status,
+                    "created_at": m.created_at.isoformat(),
+                }
+                for m in messages
+            ]
+        )
+    except Exception as e:
+        print(f"Error retrieving messages for user {user_id}: {str(e)}")
+        return jsonify({"error": "Failed to retrieve messages"}), 500
 
 
 @socketio.on("connect")

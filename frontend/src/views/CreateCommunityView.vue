@@ -24,7 +24,7 @@ const submitForm = async () => {
     }
 
     console.log(requestBody)
-    const response = await fetch('http://localhost:8000/api/community', {
+    const response = await fetch('http://localhost:5001/api/community', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

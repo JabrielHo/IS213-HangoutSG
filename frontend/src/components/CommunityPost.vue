@@ -1,5 +1,5 @@
 <template>
-  <div class="list-group-item">
+  <div class="list-group-item post-card">
     <h5 class="mb-1">How to fight this monster?</h5>
     <small>u/YuanXing - 13 hr. ago</small>
     <div class="row">
@@ -17,3 +17,16 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+.post-card {
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.post-card:hover {
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+</style>

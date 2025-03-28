@@ -10,11 +10,11 @@ app = Flask(__name__)
 CORS(app)
 
 # Uncomment for docker
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+# app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 
 # Uncomment for Local
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:is213@localhost:3306/community_service"
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:is213@localhost:3306/community_service"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
@@ -150,10 +150,7 @@ def get_communities_by_creator(creator_id):
             "message": f"An error occurred while retrieving communities: {str(e)}"
         }), 500
 
-# Uncomment for docker
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
-
-# Start Flask app
-# if __name__ == "__main__":
-#     app.run(port=5001, debug=True)
+    # Uncomment for docker
+    # app.run(host="0.0.0.0", port=5001)
+    app.run(port=5001, debug=True)
