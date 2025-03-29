@@ -2,10 +2,11 @@
   <h1 class="heading">Inbox</h1>
   <hr />
   <div class="d-flex flex-column">
-     <div v-if="isLoading" class="text-center py-5">
+     <div v-if="isLoading || !messagesLoaded" class="text-center py-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
+      <p class="mt-2 text-muted">Loading your messages...</p>
     </div>
     <div v-else class="list-group">
       <InboxMessage 

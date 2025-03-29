@@ -40,8 +40,8 @@ const hobbies = ['monsterhunter', 'cycling', 'running', 'pokemon', 'hiking', 'sw
             aria-label="Close"
           ></button>
         </div>
-        <hr />
-        <ul class="nav nav-pills flex-column mb-auto">
+        <hr class="m-0"/>
+        <ul class="nav nav-pills flex-column mb-auto" style="padding: 16px;">
           <li class="nav-item">
             <router-link to="/" class="nav-link text-white" active-class="active">
               <i class="bi bi-house-door-fill"></i>&nbsp; Home</router-link
@@ -62,8 +62,9 @@ const hobbies = ['monsterhunter', 'cycling', 'running', 'pokemon', 'hiking', 'sw
               <i class="bi bi-plus-circle-fill"></i>&nbsp; Create Community
             </router-link>
           </li>
-          <hr />
         </ul>
+        <hr class="m-0"/>
+
         <div v-if="isAuthenticated" class="offcanvas-body">
           <ul class="nav nav-pills flex-column mb-auto">
             <li v-for="hobby in hobbies" :key="hobby">

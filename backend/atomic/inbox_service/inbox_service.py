@@ -109,7 +109,7 @@ def _create_inbox_message(receiver_id, subject, content):
 # Mark as read
 @app.route("/api/inbox/read/<string:message_id>", methods=["POST"])
 def mark_as_read(message_id):
-    message = InboxMessage.query.get(message_id)
+    message = db.session.get(InboxMessage, message_id)
     if message and message.status != "read":
         message.status = "read"
         db.session.commit()
@@ -124,7 +124,6 @@ def mark_as_read(message_id):
 
         return jsonify({"message": "Message marked as read"}), 200
     return jsonify({"error": "Message not found or already read"}), 404
-
 
 # Get messages for a user
 @app.route("/api/inbox/<string:user_id>", methods=["GET"])
