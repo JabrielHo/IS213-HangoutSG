@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS posts (
     community_id CHAR(36) NOT NULL,
     author_id VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
-    content TEXT,
+    content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) DEFAULT 'published'
 );
