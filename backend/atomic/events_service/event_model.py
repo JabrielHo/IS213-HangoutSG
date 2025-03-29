@@ -5,7 +5,6 @@ import uuid
 
 app = Flask(__name__)
 
-# Function to validate location with Google Maps API
 def validate_location(address):
     GOOGLE_MAPS_API_KEY = "your_google_maps_api_key"
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={GOOGLE_MAPS_API_KEY}"
@@ -13,7 +12,6 @@ def validate_location(address):
     data = response.json()
     return "results" in data and len(data["results"]) > 0
 
-# RabbitMQ Connection Setup
 def send_to_inbox(event_data):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
@@ -24,7 +22,6 @@ def send_to_inbox(event_data):
                           body=str(event_data))
     connection.close()
 
-# Endpoint to create an event
 @app.route('/events', methods=['POST'])
 def create_event():
     data = request.json
@@ -42,11 +39,7 @@ def create_event():
         "organizer_id": data["organizer_id"]
     }
     
-    # Save to database (Assuming SQLAlchemy or other DB integration)
-    # db.session.add(Event(**event_data))
-    # db.session.commit()
-    
-    # Send message to the inbox service
+
     send_to_inbox(event_data)
     
     return jsonify({"message": "Event created successfully", "event_id": event_id})
