@@ -14,6 +14,7 @@ const hobbies = ['monsterhunter', 'cycling', 'running', 'pokemon', 'hiking', 'sw
   <nav class="navbar navbar-dark bg-dark">
     <div class="justify-content-start">
       <button
+        v-if="!isLoading"
         class="ms-2 navbar-toggler"
         type="button"
         data-bs-toggle="offcanvas"
@@ -75,9 +76,9 @@ const hobbies = ['monsterhunter', 'cycling', 'running', 'pokemon', 'hiking', 'sw
         <hr />
       </div>
     </div>
-    <div class="nav-bar__buttons justify-content-end">
+    <div class="justify-content-end">
       <!-- Show loading state -->
-      <div v-if="isLoading" class="spinner-border spinner-border-sm text-light" role="status">
+      <div v-if="isLoading" class="spinner-border spinner-border-sm text-light me-2" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
 

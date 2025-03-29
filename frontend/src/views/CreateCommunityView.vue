@@ -20,7 +20,7 @@ const submitForm = async () => {
   try {
     const requestBody = {
       ...community.value,
-      creator_id: user.value?.sub || ''
+      creator_id: user.value?.sub || '',
     }
 
     console.log(requestBody)
@@ -39,8 +39,8 @@ const submitForm = async () => {
 
     const result = await response.json()
     console.log('Community created successfully:', result)
-    
-    await new Promise(resolve => setTimeout(resolve, 500))
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
     if (result && result.data) {
       const communityName = result.data.name || community.value.name
       router.push('/c/' + communityName.toLowerCase())
@@ -77,6 +77,7 @@ const submitForm = async () => {
             minlength="3"
             maxlength="21"
             required
+            :disabled="isSubmitting"
           />
           <div class="form-text">Minimum 3 characters & Maximum 21 characters</div>
         </div>
@@ -89,10 +90,16 @@ const submitForm = async () => {
             v-model="community.description"
             rows="4"
             required
+            :disabled="isSubmitting"
           ></textarea>
         </div>
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-          <button type="button" class="btn btn-outline-secondary me-md-2" @click="router.back()">
+          <button
+            type="button"
+            class="btn btn-outline-secondary me-md-2"
+            @click="router.back()"
+            :disabled="isSubmitting"
+          >
             Cancel
           </button>
           <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -111,4 +118,7 @@ const submitForm = async () => {
 </template>
 
 <style>
+button:disabled {
+  cursor: not-allowed;
+}
 </style>

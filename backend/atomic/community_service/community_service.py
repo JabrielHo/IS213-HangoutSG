@@ -9,11 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Uncomment for docker
-# app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-
-# Uncomment for Local
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:is213@localhost:3306/community_service"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)

@@ -92,8 +92,6 @@ onMounted(() => {
 
     <div class="list-group">
       <CommunityPost />
-      <CommunityPost />
-
     </div>
   </div>
 </template>

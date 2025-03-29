@@ -86,11 +86,9 @@ onMounted(() => {
         </div>
       </div>
     </div>
-
-    <!-- Empty state -->
-    <div v-if="communities.length === 0" class="text-center p-4 text-muted">
-      No communities found. Why not create one?
-    </div>
+  </div>
+  <div v-if="communities.length === 0 && !isLoading" class="text-center p-4 text-muted">
+    No communities found. Why not create one?
   </div>
 </template>
 
@@ -168,15 +166,15 @@ export function getRandomColor(seed) {
   }
 
   const colors = [
-    '#4285f4', 
-    '#ea4335', 
-    '#fbbc05', 
-    '#34a853', 
-    '#673ab7', 
-    '#3f51b5', 
-    '#2196f3', 
-    '#009688', 
-    '#ff5722', 
+    '#4285f4',
+    '#ea4335',
+    '#fbbc05',
+    '#34a853',
+    '#673ab7',
+    '#3f51b5',
+    '#2196f3',
+    '#009688',
+    '#ff5722',
   ]
 
   return colors[Math.abs(hash) % colors.length]
