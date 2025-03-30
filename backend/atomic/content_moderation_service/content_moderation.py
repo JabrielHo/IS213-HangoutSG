@@ -3,7 +3,6 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import request
-import requests
 from datetime import datetime
 from content_moderation_model import db,ContentModeration
 import nltk
@@ -27,9 +26,8 @@ def report_post(post_id):
         post_id=data['post_id']
         reason = data.get('reason', 'No reason provided')
         timestamp = datetime.now()
+        post_content=data['content']
 
-        response = requests.get(f'http://localhost:5003/api/posts/{post_id}') #change ltr to get post content
-        post_content = response.json().get('content')
         sia = SentimentIntensityAnalyzer()
         sentiment_score = sia.polarity_scores(post_content)
         if sentiment_score['compound'] <= -0.5: 
@@ -75,11 +73,10 @@ def report_comment(comment_id):
         poster_id = data['poster_id']
         user_id = data['user_id']
         comment_id=data['comment_id']
+        comment_content=data['content']
         reason = data.get('reason', 'No reason provided')
         timestamp = datetime.now()
 
-        response = requests.get(f'http://localhost:5004/api/comments/{comment_id}') #change ltr to get comment content
-        comment_content = response.json().get('content')
         sia = SentimentIntensityAnalyzer()
         sentiment_score = sia.polarity_scores(comment_content)
         if sentiment_score['compound'] <= -0.5: 
