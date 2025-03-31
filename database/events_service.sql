@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS events (
     location VARCHAR(255) NOT NULL,
     event_date DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    capacity INT NOT NULL
+    capacity INT NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE
 );
