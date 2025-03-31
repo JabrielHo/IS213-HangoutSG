@@ -14,7 +14,7 @@ CORS(app)
 # Docker
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 
-db = SQLAlchemy(app)
+db.init_app(app)
 
 #user registering a event
 @app.route('/api/registrations', methods=['POST'])
@@ -56,6 +56,20 @@ def create_registration():
     
 
 #get all events of user
+@app.route('/api/registrations/<user_id>', methods=['GET'])
+def get_user_events(user_id):
+    try:
+        registrations = EventRegistration.query.filter_by(user_id=user_id).all()
+
+        if not registrations:
+            return jsonify({"message": "No events found for this user"}), 404
+
+        events = [reg.json() for reg in registrations]
+
+        return jsonify({"events": events}), 200
+
+    except Exception as e:
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5005
