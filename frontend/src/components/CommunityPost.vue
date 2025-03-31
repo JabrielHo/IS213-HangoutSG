@@ -20,6 +20,7 @@
 
 <style scoped>
 .post-card {
+  cursor: pointer;
   border-radius: 8px;
   margin-bottom: 0.5rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;

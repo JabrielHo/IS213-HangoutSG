@@ -33,10 +33,6 @@ def handle_inbox_message(message, routing_key):
     
     - Single recipient messages: { "type": "report_outcome", "receiver_id": "userId", "subject": "...", "content": "..." }
     - Multi-recipient messages: { "type": "event_creation", "receiver_ids": ["userId1", "userId2"], "subject": "...", "content": "..." }
-    
-    Args:
-        message: The message payload from RabbitMQ
-        routing_key: The routing key used for the message
     """
     print(f"Processing inbox message: {message}")
     
@@ -125,11 +121,36 @@ def mark_as_read(message_id):
         return jsonify({"message": "Message marked as read"}), 200
     return jsonify({"error": "Message not found or already read"}), 404
 
+# Soft delete a message
+@app.route("/api/inbox/delete/<string:message_id>", methods=["POST"])
+def soft_delete_message(message_id):
+    message = db.session.get(InboxMessage, message_id)
+    if not message:
+        return jsonify({"error": "Message not found"}), 404
+        
+    if message.status == "deleted":
+        return jsonify({"error": "Message already deleted"}), 400
+        
+    # Perform soft delete by updating status
+    message.status = "deleted"
+    db.session.commit()
+    
+    # Notify clients through WebSocket
+    socketio.emit(
+        "update_message_status",
+        {
+            "message_id": message.message_id,
+            "status": message.status,
+        },
+    )
+    
+    return jsonify({"message": "Message deleted successfully"}), 200
+
 # Get messages for a user
 @app.route("/api/inbox/<string:user_id>", methods=["GET"])
 def get_messages(user_id):
     try:
-        messages = InboxMessage.query.filter_by(receiver_id=user_id).all()
+        messages = InboxMessage.query.filter_by(receiver_id=user_id).filter(InboxMessage.status != "deleted").all()
         return jsonify(
             [
                 {

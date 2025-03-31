@@ -8,15 +8,17 @@
       </div>
       <p class="mt-2 text-muted">Loading your messages...</p>
     </div>
-    <div v-else class="list-group">
+    <div v-else class="accordion" id="messagesAccordion">
       <InboxMessage 
-        v-for="message in messages" 
+        v-for="message in sortedMessages" 
         :key="message.message_id"
+        :messageId="message.message_id"
         :subject="message.subject"
         :content="message.content"
         :time="formatTime(message.created_at)"
         :unread="message.status === 'unread'"
         @open="openMessage(message)"
+        @delete="deleteMessage(message.message_id)"
       />
       
       <div v-if="messages.length === 0 && messagesLoaded == true" class="text-center p-4 text-muted">
@@ -27,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, computed } from 'vue'
 import { io } from 'socket.io-client'
 import { useAuth0 } from '@auth0/auth0-vue'
 import InboxMessage from '../components/InboxMessage.vue'
@@ -37,6 +39,12 @@ const messages = ref([])
 const socket = ref(null)
 const isConnected = ref(false)
 const messagesLoaded = ref(false)
+
+const sortedMessages = computed(() => {
+  return [...messages.value].sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at)
+  })
+})
 
 const fetchMessages = async () => {
   if (!user.value?.sub) return
@@ -56,33 +64,89 @@ const fetchMessages = async () => {
   }
 }
 
-const setupSocketConnection = () => {
-  if (isConnected.value) return
+const deleteMessage = async (messageId) => {
+  // Find the message index in our local array
+  const index = messages.value.findIndex(m => m.message_id === messageId);
+  if (index === -1) {
+    console.error('Message not found in local state');
+    return;
+  }
+
+  const originalMessage = {...messages.value[index]};
   
-  socket.value = io('http://localhost:5006')
+  messages.value = messages.value.filter(m => m.message_id !== messageId);
+  
+  try {
+    const res = await fetch(`http://localhost:5006/api/inbox/delete/${messageId}`, {
+      method: 'POST',
+    });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! Status: ${res.status}`);
+    }
+    
+    console.log(`Message ${messageId} deleted successfully`);
+    
+  } catch (err) {
+    console.error('Failed to delete message:', err);
+    
+    messages.value.push(originalMessage);
+    
+    messages.value = [...messages.value].sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  }
+};
+
+const setupSocketConnection = () => {
+  if (isConnected.value) return;
+  
+  socket.value = io('http://localhost:5006');
   socket.value.on('connect', () => {
-    isConnected.value = true
-    console.log('Socket connected')
-  })
+    isConnected.value = true;
+    console.log('Socket connected');
+  });
   
   socket.value.on('new_message', (message) => {
-    messages.value.unshift(message) // Add new messages to the top
-    console.log('New message received:', message)
-  })
+    messages.value.unshift(message); // Add new messages to the top
+    console.log('New message received:', message);
+  });
+  
+  socket.value.on('update_message_status', (data) => {
+    const { message_id, status } = data;
+    const index = messages.value.findIndex(m => m.message_id === message_id);
+    
+    if (index !== -1) {
+      if (status === 'deleted') {
+        // Remove the message from UI if it was deleted
+        messages.value = messages.value.filter(m => m.message_id !== message_id);
+      } else {
+        // Otherwise update its status
+        messages.value[index].status = status;
+      }
+      console.log(`Message ${message_id} status updated to ${status}`);
+    }
+  });
   
   socket.value.on('disconnect', () => {
-    isConnected.value = false
-    console.log('Socket disconnected')
-  })
-}
+    isConnected.value = false;
+    console.log('Socket disconnected');
+  });
+};
 
 const openMessage = async (message) => {
   if (message.status === 'unread') {
-    await markAsRead(message.message_id)
-    const index = messages.value.findIndex(m => m.message_id === message.message_id)
+    const index = messages.value.findIndex(m => m.message_id === message.message_id);
     if (index !== -1) {
-      messages.value[index].status = 'read'
+      messages.value[index].status = 'read';
     }
+    
+    markAsRead(message.message_id).catch(err => {
+      console.error('Failed to mark message as read:', err);
+      if (index !== -1) {
+        messages.value[index].status = 'unread';
+      }
+    });
   }
 }
 
@@ -90,12 +154,17 @@ const markAsRead = async (messageId) => {
   try {
     const res = await fetch(`http://localhost:5006/api/inbox/read/${messageId}`, {
       method: 'POST',
-    })
-    if (res.ok) {
-      console.log(`Message ${messageId} marked as read`)
+    });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! Status: ${res.status}`);
     }
+    
+    console.log(`Message ${messageId} marked as read`);
+    return true;
   } catch (err) {
-    console.error('Failed to mark as read:', err)
+    console.error('Failed to mark as read:', err);
+    throw err; // Re-throw to handle in the calling function
   }
 }
 
@@ -115,14 +184,12 @@ const formatTime = (timestamp) => {
   }
   
   if (diffDays === 0) {
-    // Today: show time
     return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   } else if (diffDays === 1) {
     return 'yesterday';
   } else if (diffDays < 7) {
     return `${diffDays}d`;
   } else {
-    // More than a week ago: show date
     return messageDate.toLocaleDateString();
   }
 };
