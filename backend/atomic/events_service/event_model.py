@@ -1,48 +1,65 @@
 from flask import Flask, request, jsonify
-import requests
-import pika
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
 import uuid
 
+load_dotenv()
+
 app = Flask(__name__)
+CORS(app)
 
-def validate_location(address):
-    GOOGLE_MAPS_API_KEY = "your_google_maps_api_key"
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={GOOGLE_MAPS_API_KEY}"
-    response = requests.get(url)
-    data = response.json()
-    return "results" in data and len(data["results"]) > 0
+# Docker
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 
-def send_to_inbox(event_data):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-    channel = connection.channel()
-    channel.queue_declare(queue='event_inbox')
-    
-    channel.basic_publish(exchange='',
-                          routing_key='event_inbox',
-                          body=str(event_data))
-    connection.close()
+db = SQLAlchemy(app)
+
+class Event(db.Model):
+    __tablename__ = 'events'
+    event_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    community_id = db.Column(db.String(36), nullable=False)
+    organizer_id = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    location = db.Column(db.String(255), nullable=False)
+    event_date = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    capacity = db.Column(db.Integer, nullable=False)
 
 @app.route('/events', methods=['POST'])
 def create_event():
     data = request.json
-    
-    if not validate_location(data.get("location")):
-        return jsonify({"error": "Invalid location"}), 400
-    
-    event_id = str(uuid.uuid4())
-    event_data = {
-        "event_id": event_id,
-        "title": data["title"],
-        "description": data.get("description", ""),
-        "location": data["location"],
-        "event_date": data["event_date"],
-        "organizer_id": data["organizer_id"]
-    }
-    
+    new_event = Event(
+        community_id=data.get('community_id'),
+        organizer_id=data.get('organizer_id'),
+        title=data.get('title'),
+        description=data.get('description'),
+        location=data.get('location'),
+        event_date=data.get('event_date'),
+        capacity=data.get('capacity')
+    )
+    try:
+        db.session.add(new_event)
+        db.session.commit()
+        return jsonify({'message': 'Event created', 'event_id': new_event.event_id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
-    send_to_inbox(event_data)
-    
-    return jsonify({"message": "Event created successfully", "event_id": event_id})
+@app.route('/events/<event_id>', methods=['DELETE'])
+def delete_event(event_id):
+    try:
+        event = Event.query.get(event_id)
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+        db.session.delete(event)
+        db.session.commit()
+        return jsonify({'message': 'Event deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5004)
+    
