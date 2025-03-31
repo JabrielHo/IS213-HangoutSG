@@ -1,9 +1,10 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import CommunityPost from '../components/CommunityPost.vue'
 
 const route = useRoute()
+const router = useRouter()
 const community = ref({})
 const isLoading = ref(true)
 const error = ref(null)
@@ -13,7 +14,9 @@ const toggleJoinLeave = () => {
   isJoined.value = !isJoined.value
 }
 
-const createPost = () => {}
+const createPost = () => {
+  router.push(`/c/${route.params.community}/create`)
+}
 
 const fetchCommunityData = async () => {
   try {
