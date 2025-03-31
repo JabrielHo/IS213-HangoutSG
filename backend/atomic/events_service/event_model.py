@@ -81,6 +81,27 @@ def get_events():
         return jsonify({'events': events_list}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+#get all events by organizer_id
+@app.route('/events/organizer/<organizer_id>', methods=['GET'])
+def get_events_by_organizer(organizer_id):
+    try:
+        events = Event.query.filter_by(organizer_id=organizer_id, is_deleted=False).all()
+        events_list = [{
+            'event_id': event.event_id,
+            'community_id': event.community_id,
+            'organizer_id': event.organizer_id,
+            'title': event.title,
+            'description': event.description,
+            'location': event.location,
+            'event_date': event.event_date,
+            'created_at': event.created_at,
+            'capacity': event.capacity
+        } for event in events]
+
+        return jsonify({'events': events_list}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5004)
