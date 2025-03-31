@@ -26,6 +26,7 @@ class Event(db.Model):
     event_date = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     capacity = db.Column(db.Integer, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False)  
 
 @app.route('/events', methods=['POST'])
 def create_event():
@@ -48,18 +49,38 @@ def create_event():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/events/<event_id>', methods=['DELETE'])
-def delete_event(event_id):
+def soft_delete_event(event_id):
     try:
         event = Event.query.get(event_id)
-        if not event:
+        if not event or event.is_deleted:
             return jsonify({'error': 'Event not found'}), 404
-        db.session.delete(event)
+
+        event.is_deleted = True  
         db.session.commit()
-        return jsonify({'message': 'Event deleted'}), 200
+        return jsonify({'message': 'Event soft deleted'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/events', methods=['GET'])
+def get_events():
+    try:
+        events = Event.query.filter_by(is_deleted=False).all()
+        events_list = [{
+            'event_id': event.event_id,
+            'community_id': event.community_id,
+            'organizer_id': event.organizer_id,
+            'title': event.title,
+            'description': event.description,
+            'location': event.location,
+            'event_date': event.event_date,
+            'created_at': event.created_at,
+            'capacity': event.capacity
+        } for event in events]
+
+        return jsonify({'events': events_list}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5004)
-    
