@@ -17,6 +17,8 @@ const tabs = [
   { id: 'community', name: 'Communities' },
   { id: 'posts', name: 'Posts' },
   { id: 'comments', name: 'Comments' },
+  { id: 'hostedevents', name: 'Created Events' },
+  { id: 'joinedevents', name: 'Joined Events' },
 ]
 
 const navigateToCommunity = (communityName) => {
@@ -29,6 +31,8 @@ const loadUserData = async () => {
       await fetchUserCommunities()
       await fetchUserPosts()
       await fetchUserComments()
+      await fetchHostedEvents()
+      await fetchJoinedEvents()
     } catch (error) {
       console.error('Error fetching user data:', error)
     }
@@ -57,19 +61,19 @@ onMounted(() => {
 const fetchUserCommunities = async () => {
   try {
     isLoading.value = true
-  
+
     const creatorId = user.value.sub
     console.log('Fetching communities for creator ID:', creatorId)
-    
+
     const response = await fetch(`http://localhost:5001/api/community/creator/${creatorId}`)
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
     }
-    
+
     const data = await response.json()
     console.log('Communities API response:', data)
-    
+
     if (data.code === 200) {
       communities.value = data.data.communities
     } else {
@@ -102,12 +106,19 @@ const fetchUserPosts = async () => {
 const fetchUserComments = async () => {
   comments.value = []
 }
+
+const fetchHostedEvents = async () => {
+  comments.value = []
+}
+
+const fetchJoinedEvents = async () => {
+  comments.value = []
+}
 </script>
 
 <template>
   <div v-if="authLoading" class="text-center my-5">
-    <div class="spinner-border" role="status">
-    </div>
+    <div class="spinner-border" role="status"></div>
   </div>
 
   <div v-else>
@@ -136,7 +147,7 @@ const fetchUserComments = async () => {
       <div class="tab-content">
         <!-- Community Tab -->
         <div v-if="currentTab === 'community'" class="tab-panel">
-          <h3>My Communities</h3>
+          <h3>My Created Communities</h3>
           <div v-if="isLoading" class="text-center my-5">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading communities...</span>
@@ -146,8 +157,8 @@ const fetchUserComments = async () => {
             You haven't created any communities yet.
           </div>
           <div v-else class="communities-list">
-            <div 
-              v-for="community in communities" 
+            <div
+              v-for="community in communities"
               :key="community.community_id"
               @click="navigateToCommunity(community.name)"
               class="community-item"
@@ -160,7 +171,9 @@ const fetchUserComments = async () => {
         <!-- Posts Tab -->
         <div v-if="currentTab === 'posts'" class="tab-panel">
           <h3>My Posts</h3>
-          <div v-if="posts.length === 0" class="empty-state">You haven't created any posts yet.</div>
+          <div v-if="posts.length === 0" class="empty-state">
+            You haven't created any posts yet.
+          </div>
           <div v-else class="list-group">
             <div v-for="post in posts" :key="post.id">
               <CommunityPost />
@@ -178,6 +191,26 @@ const fetchUserComments = async () => {
             <div v-for="comment in comments" :key="comment.id">
               <p>{{ comment.content }}</p>
             </div>
+          </div>
+        </div>
+
+        <!-- Created Events Tab -->
+        <div v-if="currentTab === 'hostedevents'" class="tab-panel">
+          <h3>My Hosted Events</h3>
+          <div v-if="comments.length === 0" class="empty-state">
+            You haven't created any events yet.
+          </div>
+          <div v-else>
+          </div>
+        </div>
+
+        <!-- Joined Events Tab -->
+        <div v-if="currentTab === 'joinedevents'" class="tab-panel">
+          <h3>My Joined Events</h3>
+          <div v-if="comments.length === 0" class="empty-state">
+            You haven't joined any events yet.
+          </div>
+          <div v-else>
           </div>
         </div>
       </div>
