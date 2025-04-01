@@ -1,19 +1,7 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
-import os
 import uuid
 
-load_dotenv()
-
-app = Flask(__name__)
-CORS(app)
-
-# Docker
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
 class Event(db.Model):
     __tablename__ = 'events'
@@ -26,82 +14,4 @@ class Event(db.Model):
     event_date = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     capacity = db.Column(db.Integer, nullable=False)
-    is_deleted = db.Column(db.Boolean, default=False)  
-
-@app.route('/events', methods=['POST'])
-def create_event():
-    data = request.json
-    new_event = Event(
-        community_id=data.get('community_id'),
-        organizer_id=data.get('organizer_id'),
-        title=data.get('title'),
-        description=data.get('description'),
-        location=data.get('location'),
-        event_date=data.get('event_date'),
-        capacity=data.get('capacity')
-    )
-    try:
-        db.session.add(new_event)
-        db.session.commit()
-        return jsonify({'message': 'Event created', 'event_id': new_event.event_id}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/events/<event_id>', methods=['DELETE'])
-def soft_delete_event(event_id):
-    try:
-        event = Event.query.get(event_id)
-        if not event or event.is_deleted:
-            return jsonify({'error': 'Event not found'}), 404
-
-        event.is_deleted = True  
-        db.session.commit()
-        return jsonify({'message': 'Event soft deleted'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/events', methods=['GET'])
-def get_events():
-    try:
-        events = Event.query.filter_by(is_deleted=False).all()
-        events_list = [{
-            'event_id': event.event_id,
-            'community_id': event.community_id,
-            'organizer_id': event.organizer_id,
-            'title': event.title,
-            'description': event.description,
-            'location': event.location,
-            'event_date': event.event_date,
-            'created_at': event.created_at,
-            'capacity': event.capacity
-        } for event in events]
-
-        return jsonify({'events': events_list}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-#get all events by organizer_id
-@app.route('/events/organizer/<organizer_id>', methods=['GET'])
-def get_events_by_organizer(organizer_id):
-    try:
-        events = Event.query.filter_by(organizer_id=organizer_id, is_deleted=False).all()
-        events_list = [{
-            'event_id': event.event_id,
-            'community_id': event.community_id,
-            'organizer_id': event.organizer_id,
-            'title': event.title,
-            'description': event.description,
-            'location': event.location,
-            'event_date': event.event_date,
-            'created_at': event.created_at,
-            'capacity': event.capacity
-        } for event in events]
-
-        return jsonify({'events': events_list}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5004)
+    is_deleted = db.Column(db.Boolean, default=False)
