@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
-from models import db, Event
+from event_model import db, Event
 
 load_dotenv()
 
