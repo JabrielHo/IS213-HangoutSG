@@ -99,7 +99,29 @@ def get_comments_by_author(author_id):
             "code": 500,
             "message": f"Error retrieving comments: {e}"
         }), 500
+    
 
+# READ - Get a specific comment by comment_id
+@app.route("/api/comment/<string:comment_id>", methods=["GET"])
+def get_comment_by_id(comment_id):
+    try:
+        comment = Comment.query.get(comment_id)
+        if comment:
+            return jsonify({
+                "code": 200,
+                "data": comment.json()
+            }), 200
+        else:
+            return jsonify({
+                "code": 404,
+                "message": f"Comment not found with ID: {comment_id}"
+            }), 404
+    except Exception as e:
+        return jsonify({
+            "code": 500,
+            "message": f"Error retrieving comment: {e}"
+        }), 500
+    
 # UPDATE - Change comment status (published/unpublished)
 @app.route("/api/comment/<string:comment_id>/status", methods=["PUT"])
 def update_comment_status(comment_id):

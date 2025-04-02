@@ -80,6 +80,28 @@ def get_posts_by_author(author_id):
         }), 200
     except Exception as e:
         return jsonify({"code": 500, "message": f"Error retrieving posts: {e}"}), 500
+    
+# READ - Get a specific post by post_id
+@app.route("/api/post/<string:post_id>", methods=["GET"])
+def get_post_by_id(post_id):
+    try:
+        post = Post.query.get(post_id)
+        if post:
+            return jsonify({
+                "code": 200,
+                "data": post.json()
+            }), 200
+        else:
+            return jsonify({
+                "code": 404,
+                "message": f"Post not found with ID: {post_id}"
+            }), 404
+    except Exception as e:
+        return jsonify({
+            "code": 500,
+            "message": f"Error retrieving post: {e}"
+        }), 500
+
 
 # UPDATE - Change post status (published/unpublished)
 @app.route("/api/post/<string:post_id>/status", methods=["PUT"])
