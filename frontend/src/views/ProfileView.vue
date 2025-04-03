@@ -21,6 +21,10 @@ const tabs = [
   { id: 'joinedevents', name: 'Joined Events' },
 ]
 
+const goToPost = (postId) => {
+  router.push(`/post/${postId}`)
+}
+
 const navigateToCommunity = (communityName) => {
   router.push(`/c/${communityName}`)
 }
@@ -87,20 +91,88 @@ const fetchUserCommunities = async () => {
 }
 
 const fetchUserPosts = async () => {
-  posts.value = [
-    {
-      id: 1,
-      title: 'Best Hiking Trails',
-      content: 'Check out these amazing trails...',
-      createdAt: '2025-03-15T08:30:00Z',
-    },
-    {
-      id: 2,
-      title: 'DevOps Meetup',
-      content: 'Anyone interested in a DevOps meetup?',
-      createdAt: '2025-03-20T14:45:00Z',
-    },
-  ]
+  try {
+    isLoading.value = true
+    const creatorId = user.value.sub
+
+    // Step 1: Fetch posts and immediately display them
+    const response = await fetch(`http://localhost:5002/api/posts/author/${creatorId}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    let postsWithUserInfo = data.data.posts.map((post) => ({
+      ...post,
+      username: 'Loading...',
+      commentCount: 0,
+    }))
+
+    // Update UI immediately with basic post data
+    posts.value = postsWithUserInfo
+    isLoading.value = false
+
+    // Then fetch additional data in parallel
+    const uniqueAuthorIds = [...new Set(postsWithUserInfo.map((post) => post.author_id))]
+    const postIds = postsWithUserInfo.map((post) => post.post_id)
+
+    // Fetch user data and comment counts in parallel
+    const [userDataMap, commentCountMap] = await Promise.all([
+      fetchUserData(uniqueAuthorIds),
+      fetchCommentCounts(postIds),
+    ])
+
+    // Update posts with additional data
+    posts.value = posts.value.map((post) => {
+      const userData = userDataMap[post.author_id]
+      return {
+        ...post,
+        username: userData ? userData.username : 'Unknown User',
+        commentCount: commentCountMap[post.post_id] || 0,
+      }
+    })
+  } catch (err) {
+    console.error('Error fetching posts:', err)
+  }
+}
+
+// Helper functions to fetch data
+const fetchUserData = async (userIds) => {
+  const userDataMap = {}
+  await Promise.all(
+    userIds.map(async (userId) => {
+      try {
+        const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          userDataMap[userId] = userData.data
+        }
+      } catch (error) {
+        console.error(`Error fetching user data for ${userId}:`, error)
+      }
+    })
+  )
+  return userDataMap
+}
+
+const fetchCommentCounts = async (postIds) => {
+  const commentCountMap = {}
+  await Promise.all(
+    postIds.map(async (postId) => {
+      try {
+        const commentResponse = await fetch(`http://localhost:5003/api/comments/post/${postId}`)
+        if (commentResponse.ok) {
+          const commentData = await commentResponse.json()
+          commentCountMap[postId] = commentData.data.comments ? commentData.data.comments.length : 0
+        }
+      } catch (error) {
+        console.error(`Error fetching comment count for post ${postId}:`, error)
+        commentCountMap[postId] = 0
+      }
+    })
+  )
+  return commentCountMap
 }
 
 const fetchUserComments = async () => {
@@ -119,6 +191,7 @@ const fetchJoinedEvents = async () => {
 <template>
   <div v-if="authLoading" class="text-center my-5">
     <div class="spinner-border" role="status"></div>
+    <p class="mt-2 text-muted">Loading Profile...</p>
   </div>
 
   <div v-else>
@@ -149,35 +222,39 @@ const fetchJoinedEvents = async () => {
         <div v-if="currentTab === 'community'" class="tab-panel">
           <h3>My Created Communities</h3>
           <div v-if="isLoading" class="text-center my-5">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading communities...</span>
-            </div>
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-muted">Loading Communities...</p>
           </div>
           <div v-else-if="communities.length === 0" class="empty-state">
             You haven't created any communities yet.
           </div>
-          <div v-else class="communities-list">
-            <div
+          <div v-else class="communities-grid">
+            <CommunityCard
               v-for="community in communities"
-              :key="community.community_id"
+              :key="community.id"
+              :community="community"
               @click="navigateToCommunity(community.name)"
-              class="community-item"
-            >
-              <CommunityCard :community="community" />
-            </div>
+            />
           </div>
         </div>
 
         <!-- Posts Tab -->
         <div v-if="currentTab === 'posts'" class="tab-panel">
           <h3>My Posts</h3>
-          <div v-if="posts.length === 0" class="empty-state">
+          <div v-if="isLoading" class="text-center my-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-muted">Loading Posts...</p>
+          </div>
+          <div v-else-if="posts.length === 0" class="empty-state">
             You haven't created any posts yet.
           </div>
           <div v-else class="list-group">
-            <div v-for="post in posts" :key="post.id">
-              <CommunityPost />
-            </div>
+            <CommunityPost
+              v-for="post in posts"
+              :key="post.post_id"
+              :post="post"
+              @click="goToPost(post.post_id)"
+            />
           </div>
         </div>
 
@@ -200,8 +277,7 @@ const fetchJoinedEvents = async () => {
           <div v-if="comments.length === 0" class="empty-state">
             You haven't created any events yet.
           </div>
-          <div v-else>
-          </div>
+          <div v-else></div>
         </div>
 
         <!-- Joined Events Tab -->
@@ -210,8 +286,7 @@ const fetchJoinedEvents = async () => {
           <div v-if="comments.length === 0" class="empty-state">
             You haven't joined any events yet.
           </div>
-          <div v-else>
-          </div>
+          <div v-else></div>
         </div>
       </div>
     </div>
@@ -294,10 +369,11 @@ const fetchJoinedEvents = async () => {
   border-radius: 5px;
 }
 
-.communities-list {
+.communities-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
+  margin-top: 2rem;
 }
 
 .spinner-border {

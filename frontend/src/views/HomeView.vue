@@ -63,19 +63,19 @@ onMounted(() => {
 
   <div v-if="isLoading" class="text-center my-5">
     <div class="spinner-border" role="status">
-      <span class="visually-hidden">Loading communities...</span>
+      <span class="visually-hidden"></span>
     </div>
+    <p class="mt-2 text-muted">Loading Communities...</p>
   </div>
 
   <!-- Communities grid -->
   <div v-else class="communities-grid">
-    <div 
-      v-for="community in communities" 
+    <CommunityCard
+      v-for="community in communities"
       :key="community.id"
+      :community="community"
       @click="navigateToCommunity(community.name)"
-    >
-      <CommunityCard :community="community" />
-    </div>
+    />
   </div>
   <div v-if="communities.length === 0 && !isLoading" class="text-center p-4 text-muted">
     No communities found. Why not create one?

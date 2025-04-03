@@ -1,10 +1,13 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuth0 } from '@auth0/auth0-vue'
 import CommunityPost from '../components/CommunityPost.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { user, isAuthenticated, isLoading: authLoading } = useAuth0()
+
 const community = ref({})
 const posts = ref([])
 const isLoading = ref(true)
@@ -17,14 +20,12 @@ const isJoined = ref(false)
 const toggleJoinLeave = () => {
   isJoined.value = !isJoined.value
 }
-
 const createPost = () => {
   router.push(`/c/${route.params.community}/create`)
 }
 
 const viewEvents = () => {
-  // Placeholder for events functionality
-  router.push(`/c/${route.params.community}/events`)
+  router.push('/')
 }
 
 const goToPost = (postId) => {
@@ -35,13 +36,13 @@ const fetchCommunityData = async () => {
   try {
     error.value = null
     const communityName = route.params.community
-    
+
     if (!communityName) {
-      error.value = "No community specified"
+      error.value = 'No community specified'
       isLoading.value = false
       return
     }
-    
+
     const response = await fetch(`http://localhost:5001/api/community/name/${communityName}`)
 
     if (!response.ok) {
@@ -60,17 +61,49 @@ const fetchCommunityData = async () => {
 const fetchPosts = async () => {
   try {
     if (!community.value || !community.value.community_id) return
-    
+
     isRefreshing.value = true
-    const response = await fetch(`http://localhost:5002/api/posts/community/${community.value.community_id}`)
-    
+
+    // Step 1: Fetch posts and immediately display them
+    const response = await fetch(
+      `http://localhost:5002/api/posts/community/${community.value.community_id}`
+    )
+
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
     }
-    
+
     const data = await response.json()
-    posts.value = data.data.posts
+    let postsWithUserInfo = data.data.posts.map((post) => ({
+      ...post,
+      username: 'Loading...',
+      commentCount: 0,
+    }))
+
+    // Update UI immediately with basic post data
+    posts.value = postsWithUserInfo
     isLoading.value = false
+
+    // Then fetch additional data in parallel
+    const uniqueAuthorIds = [...new Set(postsWithUserInfo.map((post) => post.author_id))]
+    const postIds = postsWithUserInfo.map((post) => post.post_id)
+
+    // Fetch user data and comment counts in parallel
+    const [userDataMap, commentCountMap] = await Promise.all([
+      fetchUserData(uniqueAuthorIds),
+      fetchCommentCounts(postIds),
+    ])
+
+    // Update posts with additional data
+    posts.value = posts.value.map((post) => {
+      const userData = userDataMap[post.author_id]
+      return {
+        ...post,
+        username: userData ? userData.username : 'Unknown User',
+        commentCount: commentCountMap[post.post_id] || 0,
+      }
+    })
+
     isRefreshing.value = false
   } catch (err) {
     console.error('Error fetching posts:', err)
@@ -78,8 +111,46 @@ const fetchPosts = async () => {
   }
 }
 
+// Helper functions to fetch data
+const fetchUserData = async (userIds) => {
+  const userDataMap = {}
+  await Promise.all(
+    userIds.map(async (userId) => {
+      try {
+        const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          userDataMap[userId] = userData.data
+        }
+      } catch (error) {
+        console.error(`Error fetching user data for ${userId}:`, error)
+      }
+    })
+  )
+  return userDataMap
+}
+
+const fetchCommentCounts = async (postIds) => {
+  const commentCountMap = {}
+  await Promise.all(
+    postIds.map(async (postId) => {
+      try {
+        const commentResponse = await fetch(`http://localhost:5003/api/comments/post/${postId}`)
+        if (commentResponse.ok) {
+          const commentData = await commentResponse.json()
+          commentCountMap[postId] = commentData.data.comments ? commentData.data.comments.length : 0
+        }
+      } catch (error) {
+        console.error(`Error fetching comment count for post ${postId}:`, error)
+        commentCountMap[postId] = 0
+      }
+    })
+  )
+  return commentCountMap
+}
+
 const startAutoRefresh = () => {
-  stopAutoRefresh() // Clear any existing interval first
+  stopAutoRefresh()
   refreshInterval.value = setInterval(fetchPosts, refreshRate.value)
 }
 
@@ -92,7 +163,7 @@ const stopAutoRefresh = () => {
 
 const updateRefreshRate = (seconds) => {
   refreshRate.value = seconds * 1000
-  startAutoRefresh() // Restart with new rate
+  startAutoRefresh()
 }
 
 const loadInitialData = async () => {
@@ -125,6 +196,7 @@ onUnmounted(() => {
     <div class="spinner-border" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
+    <p class="mt-2 text-muted">Loading posts...</p>
   </div>
 
   <div v-else-if="error" class="alert alert-danger" role="alert">
@@ -132,38 +204,45 @@ onUnmounted(() => {
   </div>
 
   <div v-else>
-    <!-- Mobile-friendly header section -->
     <div class="community-header">
       <h1 class="heading mb-3">{{ community.name }}</h1>
 
-      <!-- Action buttons - stack vertically on mobile -->
       <div class="action-buttons">
         <button @click="viewEvents" class="btn btn-dark me-2 mb-2">
           <i class="bi bi-calendar-event"></i> View Events
         </button>
-        <button @click="createPost" class="btn btn-dark me-2 mb-2">
+        <button v-if="isAuthenticated" @click="createPost" class="btn btn-dark me-2 mb-2">
           <i class="bi bi-plus-lg"></i> Create Post
         </button>
-        <button @click="toggleJoinLeave" class="btn btn-primary mb-2">
+        <button v-if="isAuthenticated" @click="toggleJoinLeave" class="btn btn-primary mb-2">
           {{ isJoined ? 'Leave' : 'Join' }}
         </button>
       </div>
     </div>
 
     <p>{{ community.description }}</p>
-    
+
     <!-- Auto-refresh control -->
     <div class="refresh-controls mb-3">
       <div class="d-flex align-items-center">
         <span class="me-2">Auto-refresh:</span>
-        <select v-model="refreshRate" @change="updateRefreshRate(refreshRate/1000)" class="form-select form-select-sm" style="width: auto">
+        <select
+          v-model="refreshRate"
+          @change="updateRefreshRate(refreshRate / 1000)"
+          class="form-select form-select-sm"
+          style="width: auto"
+        >
           <option :value="10000">10 seconds</option>
           <option :value="30000">30 seconds</option>
           <option :value="60000">1 minute</option>
           <option :value="300000">5 minutes</option>
         </select>
-        <button @click="fetchPosts" class="btn btn-sm btn-outline-secondary ms-2" :disabled="isRefreshing">
-          <i class="bi bi-arrow-clockwise" :class="{'rotating': isRefreshing}"></i> 
+        <button
+          @click="fetchPosts"
+          class="btn btn-sm btn-outline-secondary ms-2"
+          :disabled="isRefreshing"
+        >
+          <i class="bi bi-arrow-clockwise" :class="{ rotating: isRefreshing }"></i>
           {{ isRefreshing ? 'Refreshing...' : 'Refresh Now' }}
         </button>
       </div>
@@ -171,17 +250,19 @@ onUnmounted(() => {
         Last updated: {{ new Date().toLocaleTimeString() }}
       </div>
     </div>
-    
+
     <hr />
-    
+
     <!-- Posts section with empty state -->
     <div v-if="posts.length === 0" class="text-center my-4">
       <p class="text-muted">No posts in this community yet.</p>
-      <button @click="createPost" class="btn btn-primary">Create the first post</button>
+      <button v-if="isAuthenticated" @click="createPost" class="btn btn-primary">
+        Create the first post
+      </button>
     </div>
-    
+
     <div v-else class="list-group">
-      <CommunityPost 
+      <CommunityPost
         v-for="post in posts"
         :key="post.post_id"
         :post="post"
@@ -203,8 +284,12 @@ onUnmounted(() => {
 }
 
 @keyframes rotating {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .rotating {
@@ -230,11 +315,11 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .action-buttons {
     flex-wrap: nowrap;
   }
-  
+
   .btn {
     margin-bottom: 0 !important;
   }
@@ -245,7 +330,7 @@ onUnmounted(() => {
   .action-buttons {
     width: 100%;
   }
-  
+
   .action-buttons .btn {
     flex-grow: 1;
     font-size: 0.875rem;

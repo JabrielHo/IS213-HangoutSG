@@ -1,5 +1,4 @@
 <script setup>
-import { defineProps } from 'vue';
 
 const props = defineProps({
   community: {
@@ -8,7 +7,6 @@ const props = defineProps({
   }
 });
 
-// Helper functions
 function getRandomColor(seed) {
   // Generate a consistent color based on the community name
   let hash = 0
