@@ -1,13 +1,17 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CommunityPost from '../components/CommunityPost.vue'
 
 const route = useRoute()
 const router = useRouter()
 const community = ref({})
+const posts = ref([])
 const isLoading = ref(true)
 const error = ref(null)
+const refreshInterval = ref(null)
+const refreshRate = ref(30000) // 30 seconds by default
+const isRefreshing = ref(false)
 
 const isJoined = ref(false)
 const toggleJoinLeave = () => {
@@ -18,9 +22,17 @@ const createPost = () => {
   router.push(`/c/${route.params.community}/create`)
 }
 
+const viewEvents = () => {
+  // Placeholder for events functionality
+  router.push(`/c/${route.params.community}/events`)
+}
+
+const goToPost = (postId) => {
+  router.push(`/post/${postId}`)
+}
+
 const fetchCommunityData = async () => {
   try {
-    isLoading.value = true
     error.value = null
     const communityName = route.params.community
     
@@ -38,7 +50,6 @@ const fetchCommunityData = async () => {
 
     const data = await response.json()
     community.value = data.data
-    isLoading.value = false
   } catch (err) {
     console.error('Error fetching community data:', err)
     error.value = "Community doesn't exist!"
@@ -46,17 +57,66 @@ const fetchCommunityData = async () => {
   }
 }
 
+const fetchPosts = async () => {
+  try {
+    if (!community.value || !community.value.community_id) return
+    
+    isRefreshing.value = true
+    const response = await fetch(`http://localhost:5002/api/posts/community/${community.value.community_id}`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    posts.value = data.data.posts
+    isLoading.value = false
+    isRefreshing.value = false
+  } catch (err) {
+    console.error('Error fetching posts:', err)
+    isRefreshing.value = false
+  }
+}
+
+const startAutoRefresh = () => {
+  stopAutoRefresh() // Clear any existing interval first
+  refreshInterval.value = setInterval(fetchPosts, refreshRate.value)
+}
+
+const stopAutoRefresh = () => {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value)
+    refreshInterval.value = null
+  }
+}
+
+const updateRefreshRate = (seconds) => {
+  refreshRate.value = seconds * 1000
+  startAutoRefresh() // Restart with new rate
+}
+
+const loadInitialData = async () => {
+  isLoading.value = true
+  await fetchCommunityData()
+  await fetchPosts()
+  startAutoRefresh()
+}
+
 watch(
   () => route.params.community,
   (newCommunity) => {
     if (newCommunity) {
-      fetchCommunityData()
+      loadInitialData()
     }
   }
 )
 
 onMounted(() => {
-  fetchCommunityData()
+  loadInitialData()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
@@ -91,10 +151,42 @@ onMounted(() => {
     </div>
 
     <p>{{ community.description }}</p>
+    
+    <!-- Auto-refresh control -->
+    <div class="refresh-controls mb-3">
+      <div class="d-flex align-items-center">
+        <span class="me-2">Auto-refresh:</span>
+        <select v-model="refreshRate" @change="updateRefreshRate(refreshRate/1000)" class="form-select form-select-sm" style="width: auto">
+          <option :value="10000">10 seconds</option>
+          <option :value="30000">30 seconds</option>
+          <option :value="60000">1 minute</option>
+          <option :value="300000">5 minutes</option>
+        </select>
+        <button @click="fetchPosts" class="btn btn-sm btn-outline-secondary ms-2" :disabled="isRefreshing">
+          <i class="bi bi-arrow-clockwise" :class="{'rotating': isRefreshing}"></i> 
+          {{ isRefreshing ? 'Refreshing...' : 'Refresh Now' }}
+        </button>
+      </div>
+      <div class="text-muted small mt-1" v-if="posts.length > 0">
+        Last updated: {{ new Date().toLocaleTimeString() }}
+      </div>
+    </div>
+    
     <hr />
-
-    <div class="list-group">
-      <CommunityPost />
+    
+    <!-- Posts section with empty state -->
+    <div v-if="posts.length === 0" class="text-center my-4">
+      <p class="text-muted">No posts in this community yet.</p>
+      <button @click="createPost" class="btn btn-primary">Create the first post</button>
+    </div>
+    
+    <div v-else class="list-group">
+      <CommunityPost 
+        v-for="post in posts"
+        :key="post.post_id"
+        :post="post"
+        @click="goToPost(post.post_id)"
+      />
     </div>
   </div>
 </template>
@@ -102,6 +194,21 @@ onMounted(() => {
 <style scoped>
 .btn {
   border-radius: 15px;
+}
+
+.refresh-controls {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotating {
+  animation: rotating 1s linear infinite;
 }
 
 /* Responsive styles */

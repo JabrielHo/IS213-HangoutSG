@@ -87,7 +87,7 @@ def get_all_communities():
         }), 500
 
 # READ - Get a specific community by ID
-@app.route("/api/community/<int:community_id>", methods=["GET"])
+@app.route("/api/community/<string:community_id>", methods=["GET"])
 def get_community(community_id):
     try:
         community = Community.query.get(community_id)

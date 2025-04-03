@@ -16,3 +16,14 @@ class Post(db.Model):
     content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(singapore_tz))
     status = db.Column(db.String(20), default="published")
+
+    def json(self):
+        return {
+            "post_id": self.post_id,
+            "community_id": self.community_id,
+            "author_id": self.author_id,
+            "title": self.title,
+            "content": self.content,
+            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "status": self.status
+        }
