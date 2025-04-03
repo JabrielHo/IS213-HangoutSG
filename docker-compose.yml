@@ -32,6 +32,24 @@ services:
     networks:
       - app-network
 
+  # inbox_queue_consumer:
+  #   build:
+  #     context: ./backend/rabbitmq
+  #     dockerfile: Dockerfile
+  #   container_name: inbox_queue_consumer
+  #   environment:
+  #     - RABBITMQ_HOST=rabbitmq
+  #     - RABBITMQ_PORT=5672
+  #     - EXCHANGE_NAME=hangout_exchange
+  #     - EXCHANGE_TYPE=direct
+  #     - QUEUE_NAME=inbox
+  #     - ROUTING_KEY=inbox_message
+  #     - API_ENDPOINT=http://inbox_service:5006/api/inbox/create
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - app-network
+
   kong:
     image: kong/kong-gateway:3.9
     container_name: kong

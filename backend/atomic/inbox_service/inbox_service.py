@@ -1,14 +1,9 @@
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from inbox_model import db, InboxMessage
 from flask_socketio import SocketIO
 import os
-import threading
-import sys
 from dotenv import load_dotenv
 from flask_cors import CORS
-
-sys.path.append("../../rabbitmq")
-from consumer import MessageConsumer
 
 load_dotenv()
 
@@ -21,86 +16,88 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 db.init_app(app)
 
-def start_consumer():
-    consumer = MessageConsumer("inbox_messages", handle_inbox_message)
-    consumer.start_consuming()
+def insert_into_db(receiver_id, subject, content):
+    try:
+        new_message = InboxMessage(
+            receiver_id=receiver_id,
+            subject=subject,
+            content=content,
+            status="unread",
+        )
+        db.session.add(new_message)
+        db.session.commit()
 
+        socketio.emit(
+            "new_message",
+            {
+                "message_id": new_message.message_id,
+                "receiver_id": new_message.receiver_id,
+                "subject": new_message.subject,
+                "content": new_message.content,
+                "status": new_message.status,
+                "created_at": new_message.created_at.isoformat(),
+            },
+        )
+        print(f"Message stored and emitted: {new_message.message_id}")
+        return new_message
+    except Exception as e:
+        print(f"Error processing message: {str(e)}")
+        db.session.rollback()
+        return None
 
-# Message handler for RabbitMQ consumer
-def handle_inbox_message(message, routing_key):
-    """
-    Process messages from the inbox queue with support for different message types:
+# New endpoint to create inbox messages
+@app.route("/api/inbox/create", methods=["POST"])
+def create_inbox_message():
+    data = request.get_json()
     
-    - Single recipient messages: { "type": "report_outcome", "receiver_id": "userId", "subject": "...", "content": "..." }
-    - Multi-recipient messages: { "type": "event_creation", "receiver_ids": ["userId1", "userId2"], "subject": "...", "content": "..." }
-    """
-    print(f"Processing inbox message: {message}")
-    
-    # Validate basic message structure
-    if "type" not in message:
-        print("Error: Message missing 'type' field")
-        return
+    # Validate message type
+    if "type" not in data:
+        return jsonify({"error": "Message missing 'type' field"}), 400
         
-    message_type = message.get("type")
+    message_type = data.get("type")
     
     # Process based on message type
     if message_type == "event_creation":
         # Multi-recipient message
-        if "receiver_ids" not in message or "subject" not in message or "content" not in message:
-            print(f"Error: Missing required fields for event_creation message: {message}")
-            return
+        if "receiver_ids" not in data or "subject" not in data or "content" not in data:
+            return jsonify({"error": "Missing required fields for event_creation message"}), 400
             
-        receiver_ids = message["receiver_ids"]
-        subject = message["subject"]
-        content = message["content"]
+        receiver_ids = data["receiver_ids"]
+        subject = data["subject"]
+        content = data["content"]
         
         # Send to each recipient
+        created_messages = []
         for receiver_id in receiver_ids:
-            _create_inbox_message(receiver_id, subject, content)
+            message = insert_into_db(receiver_id, subject, content)
+            if message:
+                created_messages.append(message.message_id)
+                
+        return jsonify({
+            "message": f"Created {len(created_messages)} messages successfully", 
+            "message_ids": created_messages
+        }), 201
             
-    elif message_type == "report_outcome":
+    elif message_type == "report_outcome" or message_type == "event_join_status":
         # Single recipient message
-        if "receiver_id" not in message or "subject" not in message or "content" not in message:
-            print(f"Error: Missing required fields for {message_type} message: {message}")
-            return
+        if "receiver_id" not in data or "subject" not in data or "content" not in data:
+            return jsonify({"error": f"Missing required fields for {message_type} message"}), 400
             
-        receiver_id = message["receiver_id"]
-        subject = message["subject"]
-        content = message["content"]
+        receiver_id = data["receiver_id"]
+        subject = data["subject"]
+        content = data["content"]
         
-        _create_inbox_message(receiver_id, subject, content)
+        message = insert_into_db(receiver_id, subject, content)
+        if message:
+            return jsonify({
+                "message": "Message created successfully", 
+                "message_id": message.message_id
+            }), 201
+        else:
+            return jsonify({"error": "Failed to create message"}), 500
         
     else:
-        print(f"Warning: Unknown message type '{message_type}'")
-
-
-def _create_inbox_message(receiver_id, subject, content):
-    with app.app_context():
-        try:
-            new_message = InboxMessage(
-                receiver_id=receiver_id,
-                subject=subject,
-                content=content,
-                status="unread",
-            )
-            db.session.add(new_message)
-            db.session.commit()
-
-            socketio.emit(
-                "new_message",
-                {
-                    "message_id": new_message.message_id,
-                    "receiver_id": new_message.receiver_id,
-                    "subject": new_message.subject,
-                    "content": new_message.content,
-                    "status": new_message.status,
-                    "created_at": new_message.created_at.isoformat(),
-                },
-            )
-            print(f"Message stored and emitted: {new_message.message_id}")
-        except Exception as e:
-            print(f"Error processing message: {str(e)}")
-            db.session.rollback()
+        return jsonify({"error": f"Unknown message type '{message_type}'"}), 400
 
 # Mark as read
 @app.route("/api/inbox/read/<string:message_id>", methods=["POST"])
@@ -173,12 +170,7 @@ def get_messages(user_id):
 def handle_connect():
     print("Client connected")
 
-
 if __name__ == "__main__":
-    # Start consumer in a separate thread
-    consumer_thread = threading.Thread(target=start_consumer, daemon=True)
-    consumer_thread.start()
-
     # Uncomment for docker
     # socketio.run(app, host="0.0.0.0", port=5006, allow_unsafe_werkzeug=True)
 
