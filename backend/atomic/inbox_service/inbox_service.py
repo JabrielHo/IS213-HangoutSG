@@ -78,7 +78,7 @@ def create_inbox_message():
             "message_ids": created_messages
         }), 201
             
-    elif message_type == "report_outcome" or message_type == "event_join_status":
+    elif message_type == "report_outcome" or message_type == "event_registration_outcome":
         # Single recipient message
         if "receiver_id" not in data or "subject" not in data or "content" not in data:
             return jsonify({"error": f"Missing required fields for {message_type} message"}), 400
