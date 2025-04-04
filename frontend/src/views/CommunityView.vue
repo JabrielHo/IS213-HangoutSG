@@ -17,9 +17,89 @@ const refreshRate = ref(30000) // 30 seconds by default
 const isRefreshing = ref(false)
 
 const isJoined = ref(false)
-const toggleJoinLeave = () => {
-  isJoined.value = !isJoined.value
+const isJoinLeaveLoading = ref(false)
+const joinLeaveError = ref(null)
+
+const checkMembershipStatus = async () => {
+  if (!isAuthenticated.value || !user.value || !community.value.community_id) return
+
+  try {
+    const response = await fetch(
+      `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/getmember/${community.value.community_id}/${user.value.sub}`
+    )
+
+    if (response.ok) {
+      const data = await response.json()
+      
+      if (data.Result && data.Result.ErrorMessage === "Member Not Found") {
+        isJoined.value = false
+      } else if (data.Result && data.Result.Success === true) {
+        isJoined.value = true
+      } else {
+        isJoined.value = false
+      }
+    } else {
+      isJoined.value = false
+    }
+    isLoading.value = false
+  } catch (err) {
+    console.error('Error checking membership status:', err)
+    isJoined.value = false
+    isLoading.value = false
+  }
 }
+
+const toggleJoinLeave = async () => {
+  if (!isAuthenticated.value || !user.value || !community.value.community_id) return
+
+  isJoinLeaveLoading.value = true
+  joinLeaveError.value = null
+
+  try {
+    if (!isJoined.value) {
+      // Join the community
+      const joinResponse = await fetch(
+        `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/communityaddmember/${community.value.community_id}/${user.value.sub}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!joinResponse.ok) {
+        throw new Error(`Failed to join community: ${joinResponse.status}`)
+      }
+
+      isJoined.value = true
+    } else {
+      const leaveResponse = await fetch(
+        `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/updatestatus/${community.value.community_id}/${user.value.sub}?NewStatus=left`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!leaveResponse.ok) {
+        throw new Error(`Failed to leave community: ${leaveResponse.status}`)
+      }
+
+      isJoined.value = false
+    }
+  } catch (err) {
+    console.error('Error toggling community membership:', err)
+    joinLeaveError.value = `Failed to ${
+      isJoined.value ? 'leave' : 'join'
+    } community. Please try again.`
+  } finally {
+    isJoinLeaveLoading.value = false
+  }
+}
+
 const createPost = () => {
   router.push(`/c/${route.params.community}/create`)
 }
@@ -82,7 +162,6 @@ const fetchPosts = async () => {
 
     // Update UI immediately with basic post data
     posts.value = postsWithUserInfo
-    isLoading.value = false
 
     // Then fetch additional data in parallel
     const uniqueAuthorIds = [...new Set(postsWithUserInfo.map((post) => post.author_id))]
@@ -170,6 +249,7 @@ const loadInitialData = async () => {
   isLoading.value = true
   await fetchCommunityData()
   await fetchPosts()
+  await checkMembershipStatus()
   startAutoRefresh()
 }
 
@@ -178,6 +258,15 @@ watch(
   (newCommunity) => {
     if (newCommunity) {
       loadInitialData()
+    }
+  }
+)
+
+watch(
+  () => isAuthenticated.value,
+  (newAuth) => {
+    if (newAuth && community.value.community_id) {
+      checkMembershipStatus()
     }
   }
 )
@@ -214,13 +303,30 @@ onUnmounted(() => {
         <button v-if="isAuthenticated" @click="createPost" class="btn btn-dark me-2 mb-2">
           <i class="bi bi-plus-lg"></i> Create Post
         </button>
-        <button v-if="isAuthenticated" @click="toggleJoinLeave" class="btn btn-primary mb-2">
+        <button
+          v-if="isAuthenticated"
+          @click="toggleJoinLeave"
+          class="btn btn-primary mb-2"
+          :class="isJoined ? 'btn-danger' : 'btn-primary'"
+          :disabled="isJoinLeaveLoading"
+        >
+          <span
+            v-if="isJoinLeaveLoading"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+
           {{ isJoined ? 'Leave' : 'Join' }}
         </button>
       </div>
     </div>
 
     <p>{{ community.description }}</p>
+
+    <div v-if="joinLeaveError" class="alert alert-danger mb-3" role="alert">
+      {{ joinLeaveError }}
+    </div>
 
     <!-- Auto-refresh control -->
     <div class="refresh-controls mb-3">
