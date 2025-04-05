@@ -1,24 +1,26 @@
 <template>
-  <div class="report-card">
-    <!-- Only wrap content that should trigger navigation -->
-    <router-link :to="{ name: 'report-details', params: { reportId: content.flag_id } }">
+  <div v-if="report">
+    <h1>Report Details</h1>
+
+    <div class="report-card-details">
       <div class="card-header">
         <span class="report-type">
-          {{ content.post_id ? '📮 Post' : '💬 Comment' }}
+          {{ report.post_id ? '📮 Post' : '💬 Comment' }}
         </span>
-        <span class="report-status" :class="statusClass">{{ content.status }}</span>
+        <span class="report-status" :class="statusClass">{{ report.status }}</span>
       </div>
 
       <div class="card-content">
-        <p class="reported-content">{{ getContentPreview }}</p>
+        <p class="full-content-text">{{ report.post_content || report.comment_content }}</p>
+
         <div class="report-meta">
           <div class="meta-item">
             <span class="meta-label">Reported by:</span>
-            <span class="meta-value">@{{ content.flagged_by }}</span>
+            <span class="meta-value">@{{ report.flagged_by }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Reason:</span>
-            <span class="meta-value">{{ content.reason }}</span>
+            <span class="meta-value">{{ report.reason }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Reported on:</span>
@@ -26,23 +28,20 @@
           </div>
         </div>
       </div>
-    </router-link>
 
-    <!-- Buttons outside of the router-link to trigger their actions -->
-    <div class="card-actions">
-      <button 
-        class="action-btn resolve-btn"
-        @click.stop="$emit('resolve', content.flag_id)"
-      >
-        Resolve
-      </button>
-      <button 
-        class="action-btn ignore-btn"
-        @click.stop="$emit('ignore', content.flag_id)"
-      >
-        Ignore
-      </button>
+      <div class="card-actions">
+        <button class="action-btn resolve-btn" @click="resolveReport">
+          Resolve
+        </button>
+        <button class="action-btn ignore-btn" @click="ignoreReport">
+          Ignore
+        </button>
+      </div>
     </div>
+  </div>
+
+  <div v-else>
+    <p>Loading report details...</p>
   </div>
 </template>
 
@@ -50,20 +49,11 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  content: {
-    type: Object,
-    required: true
-  }
-})
-
-const getContentPreview = computed(() => {
-  // Check if the content is a post or a comment
-  const text = props.content.post_content || props.content.comment_content || 'No content available';
-  return text;
+  report: Object  // Receiving the report prop
 })
 
 const formattedDate = computed(() => {
-  return new Date(props.content.created_at).toLocaleDateString('en-SG', {
+  return new Date(props.report.created_at).toLocaleDateString('en-SG', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -73,31 +63,51 @@ const formattedDate = computed(() => {
 })
 
 const statusClass = computed(() => {
+  const status = props.report.status?.toLowerCase() || 'pending';  // Default to 'pending' if undefined
   return {
     'pending': 'status-pending',
     'resolved': 'status-resolved',
     'ignored': 'status-ignored'
-  }[props.content.status.toLowerCase()]
+  }[status] || 'status-pending'; // Fallback to 'pending' if status is unknown
 })
+
+const resolveReport = () => {
+  // Handle resolving the report
+}
+
+const ignoreReport = () => {
+  // Handle ignoring the report
+}
 </script>
 
 <style scoped>
-.report-card {
+.report-details {
+  background: #f8f9fa;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.report-card-details {
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-width: 800px;
+  width: 100%;
   transition: transform 0.2s ease;
-  text-decoration: none; /* Remove underline from the router-link */
+  padding: 1.5rem;
 }
 
-.report-card a {
-  text-decoration: none;
-  color: inherit; /* optional: preserve intended color styling */
-}
-
-.report-card:hover {
+.report-card-details:hover {
   transform: translateY(-2px);
+}
+
+.page-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
 }
 
 .card-header {
@@ -139,16 +149,10 @@ const statusClass = computed(() => {
   padding: 1.5rem;
 }
 
-.reported-content {
+.full-content-text {
   color: #4a4a4a;
   margin-bottom: 1rem;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
 }
 
 .report-meta {

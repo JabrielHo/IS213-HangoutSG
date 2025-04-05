@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import ReportDetails from '../components/ReportDetails.vue' 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,6 +54,13 @@ const router = createRouter({
       path: '/post/:postId',
       name: 'PostDetail',
       component: () => import('../views/PostView.vue'),
+    },
+    // Add the report-details route and use the imported ReportDetails component
+    {
+      path: '/report/:reportId',
+      name: 'report-details',
+      component: () => import('../components/ReportDetails.vue'),  // Reference the imported component
+      props: true,  // Pass the route params as props to the component
     },
   ],
 })

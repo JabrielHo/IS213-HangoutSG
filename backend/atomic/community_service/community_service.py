@@ -148,5 +148,5 @@ def get_communities_by_creator(creator_id):
 
 if __name__ == "__main__":
     # Uncomment for docker
-    # app.run(host="0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=5001)
     app.run(port=5001, debug=True)

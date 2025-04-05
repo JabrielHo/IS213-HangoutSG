@@ -50,7 +50,7 @@ def send_email_via_smtp(to_email, subject, body):
         return False
 
 # CREATE - Send an email
-@app.route("/email", methods=["POST"])
+@app.route("/api/email", methods=["POST"])
 def send_email():
     try:
         data = request.get_json()

@@ -7,7 +7,7 @@ load_dotenv()
 
 # Service URLs from environment variables
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:5000/api/users")
-EMAIL_SERVICE_URL = os.getenv("EMAIL_SERVICE_URL", "http://localhost:5008/email")
+EMAIL_SERVICE_URL = os.getenv("EMAIL_SERVICE_URL", "http://localhost:5008/api/email")
 POST_SERVICE_URL = os.getenv("POST_SERVICE_URL", "http://localhost:5003/api/post")
 COMMENT_SERVICE_URL = os.getenv("COMMENT_SERVICE_URL", "http://localhost:5004/api/comment")
 CONTENT_MODERATION_URL = os.getenv("CONTENT_MODERATION_URL", "http://localhost:5007/api/moderation")
