@@ -30,6 +30,11 @@ const router = createRouter({
       component: () => import('../views/CreateCommunityView.vue'),
     },
     {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+    },
+    {
       path: '/c/:community',
       name: 'community',
       component: () => import('../views/CommunityView.vue'),
@@ -47,9 +52,8 @@ const router = createRouter({
     {
       path: '/post/:postId',
       name: 'PostDetail',
-      component: () => import('../views/PostView.vue')
-    }
-    
+      component: () => import('../views/PostView.vue'),
+    },
   ],
 })
 

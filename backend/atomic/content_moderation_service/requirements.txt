@@ -1,0 +1,9 @@
+flask
+flask-cors
+python-dotenv
+requests
+nltk
+pytz
+flask-sqlalchemy
+psycopg2-binary
+mysql-connector-python

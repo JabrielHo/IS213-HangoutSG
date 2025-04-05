@@ -1,12 +1,12 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify,request
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-import request
 from datetime import datetime
 from content_moderation_model import db,ContentModeration
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -192,4 +192,4 @@ def get_all_reported():
 
 
 if __name__ == "__main__":
-    app.run(port=5007, debug=True)
+    app.run(host='0.0.0.0', port=5007, debug=True)
