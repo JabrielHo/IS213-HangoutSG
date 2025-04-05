@@ -52,3 +52,15 @@ publish_to_inbox(
         "content": "A cycling event by userid has been created",
     }
 )
+
+publish_to_inbox(
+    {
+        "type": "event_deletion",
+        "receiver_ids": [
+            "auth0|67cd8623469fee2d24e73bfb",
+            "auth0|67ee225a0e55bc13f7a2dd17",
+        ],
+        "subject": "New cycling event created in your community!",
+        "content": "A cycling event by userid has been created",
+    }
+)

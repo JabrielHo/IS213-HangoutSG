@@ -63,6 +63,10 @@ events_client = EventsServiceClient(EVENTS_SERVICE_URL)
 def create_event():
     """Composite endpoint to create an event"""
     event_data = request.json
+
+    #get details
+    subject = event_data["title"]
+    content = event_data["description"]
     
     # Validate required fields
     required_fields = ["community_id", "organizer_id", "title", "event_date"]
@@ -70,13 +74,22 @@ def create_event():
         if field not in event_data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
     
-    # Optional field defaults or transformations could be added here
+    # get user_ID from community
+    user_id = "auth0|67cd8623469fee2d24e73bfb"
 
-    msg = ""
 
-    events_client.publish_to_inbox(msg)
-    
-    
+    # send msg to rabbit MQ
+
+    # Step 4: Publish notification message to inbox
+    inbox_message = {
+        "type": "event_creation",
+        "receiver_id": [user_id],
+        "subject": subject,
+        "content": content,
+    }
+
+    events_client.publish_to_inbox(inbox_message)
+
     # Call atomic service
     result, status_code = events_client.create_event(event_data)
     
