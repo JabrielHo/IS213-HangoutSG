@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import requests
 import os
 from dotenv import load_dotenv
+import pika
+import json
 
 load_dotenv()
 
@@ -40,6 +42,34 @@ class EventsServiceClient:
         """Get events by organizer ID from the atomic service"""
         response = requests.get(f"{self.base_url}/events/organizer/{organizer_id}")
         return response.json(), response.status_code
+    
+    def publish_to_inbox(message):
+        try:
+            amqp_host = os.environ.get("RABBITMQ_HOST", "localhost")
+            amqp_port = int(os.environ.get("RABBITMQ_PORT", 5672))
+            exchange_name = os.environ.get("EXCHANGE_NAME", "hangout_exchange")
+            routing_key = os.environ.get("ROUTING_KEY", "inbox_message")
+
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=amqp_host, port=amqp_port)
+            )
+            channel = connection.channel()
+
+            # Convert message to JSON and publish
+            message_json = json.dumps(message)
+            channel.basic_publish(
+                exchange=exchange_name,
+                routing_key=routing_key,
+                body=message_json,
+                properties=pika.BasicProperties(
+                    delivery_mode=2,
+                ),
+            )
+
+            connection.close()
+        except Exception as e:
+            print(f"Error publishing message to inbox: {e}")
+            
 
 # Initialize client
 events_client = EventsServiceClient(EVENTS_SERVICE_URL)
@@ -56,6 +86,11 @@ def create_event():
             return jsonify({"error": f"Missing required field: {field}"}), 400
     
     # Optional field defaults or transformations could be added here
+
+    msg = ""
+
+    events_client.publish_to_inbox(msg)
+    
     
     # Call atomic service
     result, status_code = events_client.create_event(event_data)
