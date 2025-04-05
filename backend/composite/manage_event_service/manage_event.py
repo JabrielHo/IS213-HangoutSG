@@ -27,21 +27,6 @@ class EventsServiceClient:
         """Delete an event by calling the atomic service"""
         response = requests.delete(f"{self.base_url}/events/{event_id}")
         return response.json(), response.status_code
-        
-    def get_event(self, event_id):
-        """Get event by ID from the atomic service"""
-        response = requests.get(f"{self.base_url}/events/{event_id}")
-        return response.json(), response.status_code
-        
-    def get_all_events(self):
-        """Get all events from the atomic service"""
-        response = requests.get(f"{self.base_url}/events")
-        return response.json(), response.status_code
-        
-    def get_events_by_organizer(self, organizer_id):
-        """Get events by organizer ID from the atomic service"""
-        response = requests.get(f"{self.base_url}/events/organizer/{organizer_id}")
-        return response.json(), response.status_code
     
     def publish_to_inbox(message):
         try:
@@ -109,24 +94,6 @@ def delete_event(event_id):
     # Call atomic service to delete
     result, status_code = events_client.delete_event(event_id)
     
-    return jsonify(result), status_code
-
-@app.route("/api/events", methods=["GET"])
-def get_events():
-    """Composite endpoint to get all events"""
-    result, status_code = events_client.get_all_events()
-    return jsonify(result), status_code
-
-@app.route("/api/events/<event_id>", methods=["GET"])
-def get_event(event_id):
-    """Composite endpoint to get an event by ID"""
-    result, status_code = events_client.get_event(event_id)
-    return jsonify(result), status_code
-
-@app.route("/api/events/organizer/<organizer_id>", methods=["GET"])
-def get_events_by_organizer(organizer_id):
-    """Composite endpoint to get events by organizer ID"""
-    result, status_code = events_client.get_events_by_organizer(organizer_id)
     return jsonify(result), status_code
 
 @app.errorhandler(Exception)
