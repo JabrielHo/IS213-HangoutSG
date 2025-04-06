@@ -7,7 +7,6 @@ const { user, isAuthenticated, isLoading } = useAuth0()
 const router = useRouter()
 const route = useRoute()
 const communityName = route.params.community
-console.log(communityName)
 const post = ref({
   title: '',
   content: '',
@@ -77,11 +76,11 @@ const submitForm = async () => {
     }
 
     const result = await response.json()
-    console.log('Post created successfully:', result)
-
     await new Promise((resolve) => setTimeout(resolve, 500))
-
-    router.push(`/c/${communityName}`)
+    if (result && result.data) {
+      const post = result.data.post_id
+      router.push('/post/' + post)
+    }
   } catch (error) {
     console.error('Error creating post:', error)
     errorMessage.value = error.message || 'An error occurred while creating the post'
@@ -101,7 +100,7 @@ const submitForm = async () => {
     </div>
 
     <div v-if="isLoading" class="text-center my-5">
-        <div class="spinner-border" role="status"></div>
+      <div class="spinner-border" role="status"></div>
     </div>
 
     <div v-else-if="!isAuthenticated" class="alert alert-warning">

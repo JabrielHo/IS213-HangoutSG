@@ -110,7 +110,6 @@ def get_events_by_organizer(organizer_id):
 def get_event(event_id):
     """Get event information by event ID"""
     try:
-        # Updated way to get by primary key in SQLAlchemy 1.4+
         event = db.session.get(Event, event_id)
 
         if not event or event.is_deleted:
@@ -129,6 +128,32 @@ def get_event(event_id):
         }
 
         return jsonify(event_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route("/events/community/<community_id>", methods=["GET"])
+def get_events_by_community(community_id):
+    """Get all events by community ID"""
+    try:
+        events = db.session.query(Event).filter_by(community_id=community_id, is_deleted=False).all()
+
+        # Return empty array instead of 404
+        events_data = [
+            {
+                "event_id": event.event_id,
+                "community_id": event.community_id,
+                "organizer_id": event.organizer_id,
+                "title": event.title,
+                "description": event.description,
+                "location": event.location,
+                "event_date": event.event_date,
+                "created_at": event.created_at,
+                "capacity": event.capacity,
+            }
+            for event in events
+        ]
+
+        return jsonify(events_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

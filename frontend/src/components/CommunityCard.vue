@@ -1,11 +1,14 @@
 <script setup>
-
 const props = defineProps({
   community: {
     type: Object,
-    required: true
-  }
-});
+    required: true,
+  },
+  showStats: {
+    type: Boolean,
+    default: true,
+  },
+})
 
 function getRandomColor(seed) {
   // Generate a consistent color based on the community name
@@ -42,10 +45,14 @@ function truncateDescription(text, maxLength) {
     </div>
     <div class="card-body">
       <h3 class="card-title">{{ props.community.name }}</h3>
-      <p class="card-text">{{ truncateDescription(props.community.description, 100) }}</p>
-      <div class="community-stats">
-        <span><i class="bi bi-people-fill"></i> {{ props.community.members_count || 0 }} members</span>
-        <span><i class="bi bi-calendar-event"></i> {{ props.community.events_count || 0 }} events</span>
+      <p class="card-text">{{ truncateDescription(props.community.description, 30) }}</p>
+      <div v-if="showStats" class="community-stats">
+        <span
+          ><i class="bi bi-people-fill"></i> {{ props.community.memberCount || 0 }} members</span
+        >
+        <span
+          ><i class="bi bi-calendar-event"></i> {{ props.community.eventCount || 0 }} events</span
+        >
       </div>
     </div>
   </div>

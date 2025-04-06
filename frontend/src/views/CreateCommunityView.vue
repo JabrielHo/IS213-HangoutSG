@@ -23,7 +23,6 @@ const submitForm = async () => {
       creator_id: user.value?.sub || '',
     }
 
-    console.log(requestBody)
     const response = await fetch('http://localhost:5001/api/community', {
       method: 'POST',
       headers: {
@@ -38,7 +37,6 @@ const submitForm = async () => {
     }
 
     const result = await response.json()
-    console.log('Community created successfully:', result)
 
     await new Promise((resolve) => setTimeout(resolve, 500))
     if (result && result.data) {

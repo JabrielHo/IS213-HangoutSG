@@ -9,12 +9,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Docker (or environment variable)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-
-# Local
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:is213@localhost:3306/comment_service"
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
@@ -155,6 +151,5 @@ def update_comment_status(comment_id):
             "message": f"Error updating comment: {e}"
         }), 500
 
-# Run Flask App
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5003)

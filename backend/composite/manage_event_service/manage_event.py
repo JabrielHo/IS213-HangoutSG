@@ -11,6 +11,7 @@ app = Flask(__name__)
 
 # Configuration
 EVENTS_SERVICE_URL = os.getenv("EVENTS_SERVICE_URL", "http://localhost:5004")
+OUTSYSTEM_URL = f"https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/membersbycommunity/"
 
 class EventsServiceClient:
     """Client for interacting with the atomic events microservice"""
@@ -63,32 +64,39 @@ events_client = EventsServiceClient(EVENTS_SERVICE_URL)
 def create_event():
     """Composite endpoint to create an event"""
     event_data = request.json
-
-    #get details
-    subject = event_data["title"]
-    content = event_data["description"]
     
     # Validate required fields
     required_fields = ["community_id", "organizer_id", "title", "event_date"]
     for field in required_fields:
         if field not in event_data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+    #get details
+    subject = event_data["title"]
+    content = event_data["description"]
+    community_id = event_data["community_id"]
     
     # get user_ID from community
-    user_id = "auth0|67cd8623469fee2d24e73bfb"
+    response = requests.get(OUTSYSTEM_URL + community_id)
 
+    # Check if request was successful
+    if response.status_code == 200:
+        data = response.json()
 
-    # send msg to rabbit MQ
+        # Extract user IDs
+        user_id = [member["user_id"] for member in data.get("CommunityMemberAPI", [])]
+    else:
+        return jsonify(response.text), response.status_code
 
-    # Step 4: Publish notification message to inbox
+    # Publish notification message to inbox
     inbox_message = {
         "type": "event_creation",
-        "receiver_id": [user_id],
+        "receiver_ids": user_id,
         "subject": subject,
         "content": content,
     }
 
-    events_client.publish_to_inbox(inbox_message)
+    EventsServiceClient.publish_to_inbox(inbox_message)
 
     # Call atomic service
     result, status_code = events_client.create_event(event_data)
@@ -98,11 +106,38 @@ def create_event():
 @app.route("/api/events/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     """Composite endpoint to delete an event"""
-    # First, verify the event exists
-    event_result, event_status = events_client.get_event(event_id)
+    # Step 1: Check event details and capacity
+    event_response = requests.get(f"{EVENTS_SERVICE_URL}/events/{event_id}")
+    if event_response.status_code != 200:
+        return jsonify({"error": "Event not found"}), 404
+
+    event = event_response.json()
+    subject = event["title"]
+    content = event["description"]
+    community_id = event["community_id"]
+
     
-    if event_status != 200:
-        return jsonify(event_result), event_status
+    # get user_ID from community
+    response = requests.get(OUTSYSTEM_URL + community_id)
+
+    # Check if request was successful
+    if response.status_code == 200:
+        data = response.json()
+
+        # Extract user IDs
+        user_id = [member["user_id"] for member in data.get("CommunityMemberAPI", [])]
+    else:
+        return jsonify(response.text), response.status_code
+
+    # Publish notification message to inbox
+    inbox_message = {
+        "type": "event_deletion",
+        "receiver_ids": user_id,
+        "subject": "Deletion of " + subject,
+        "content": content,
+    }
+
+    EventsServiceClient.publish_to_inbox(inbox_message)
     
     # Call atomic service to delete
     result, status_code = events_client.delete_event(event_id)

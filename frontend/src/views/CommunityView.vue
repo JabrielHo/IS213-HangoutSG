@@ -1,12 +1,12 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth0 } from '@auth0/auth0-vue'
 import CommunityPost from '../components/CommunityPost.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { user, isAuthenticated, isLoading: authLoading } = useAuth0()
+const { user, isAuthenticated } = useAuth0()
 
 const community = ref({})
 const posts = ref([])
@@ -15,10 +15,28 @@ const error = ref(null)
 const refreshInterval = ref(null)
 const refreshRate = ref(30000) // 30 seconds by default
 const isRefreshing = ref(false)
+const sortOrder = ref('newest')
 
 const isJoined = ref(false)
 const isJoinLeaveLoading = ref(false)
 const joinLeaveError = ref(null)
+
+const sortedPosts = computed(() => {
+  if (!posts.value.length) return []
+
+  return [...posts.value].sort((a, b) => {
+    const dateA = new Date(a.created_at)
+    const dateB = new Date(b.created_at)
+
+    return sortOrder.value === 'newest'
+      ? dateB - dateA // Newest first
+      : dateA - dateB // Oldest first
+  })
+})
+
+const changeSortOrder = (order) => {
+  sortOrder.value = order
+}
 
 const checkMembershipStatus = async () => {
   if (!isAuthenticated.value || !user.value || !community.value.community_id) {
@@ -32,10 +50,14 @@ const checkMembershipStatus = async () => {
 
     if (response.ok) {
       const data = await response.json()
-      
-      if (data.Result && data.Result.ErrorMessage === "Member Not Found") {
+
+      if (data.Result && data.Result.ErrorMessage === 'Member Not Found') {
         isJoined.value = false
-      } else if (data.Result && data.Result.Success === true && data.CommunityMemberAPI.status === "joined") {
+      } else if (
+        data.Result &&
+        data.Result.Success === true &&
+        data.CommunityMemberAPI.status === 'joined'
+      ) {
         isJoined.value = true
       } else {
         isJoined.value = false
@@ -251,13 +273,13 @@ const loadInitialData = async () => {
   isLoading.value = true
   await fetchCommunityData()
   await fetchPosts()
-  
+
   if (isAuthenticated.value) {
     await checkMembershipStatus()
   } else {
     isLoading.value = false
   }
-  
+
   startAutoRefresh()
 }
 
@@ -308,7 +330,11 @@ onUnmounted(() => {
         <button @click="viewEvents" class="btn btn-dark me-2 mb-2">
           <i class="bi bi-calendar-event"></i> View Events
         </button>
-        <button v-if="isAuthenticated" @click="createPost" class="btn btn-dark me-2 mb-2">
+        <button
+          v-if="isAuthenticated && isJoined"
+          @click="createPost"
+          class="btn btn-dark me-2 mb-2"
+        >
           <i class="bi bi-plus-lg"></i> Create Post
         </button>
         <button
@@ -337,31 +363,52 @@ onUnmounted(() => {
     </div>
 
     <!-- Auto-refresh control -->
-    <div class="refresh-controls mb-3">
-      <div class="d-flex align-items-center">
-        <span class="me-2">Auto-refresh:</span>
-        <select
-          v-model="refreshRate"
-          @change="updateRefreshRate(refreshRate / 1000)"
-          class="form-select form-select-sm"
-          style="width: auto"
-        >
-          <option :value="10000">10 seconds</option>
-          <option :value="30000">30 seconds</option>
-          <option :value="60000">1 minute</option>
-          <option :value="300000">5 minutes</option>
-        </select>
-        <button
-          @click="fetchPosts"
-          class="btn btn-sm btn-outline-secondary ms-2"
-          :disabled="isRefreshing"
-        >
-          <i class="bi bi-arrow-clockwise" :class="{ rotating: isRefreshing }"></i>
-          {{ isRefreshing ? 'Refreshing...' : 'Refresh Now' }}
-        </button>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <!-- Auto-refresh control -->
+      <div class="refresh-controls">
+        <div class="d-flex align-items-center">
+          <span class="me-2">Auto-refresh:</span>
+          <select
+            v-model="refreshRate"
+            @change="updateRefreshRate(refreshRate / 1000)"
+            class="form-select form-select-sm"
+            style="width: auto"
+          >
+            <option :value="10000">10 seconds</option>
+            <option :value="30000">30 seconds</option>
+            <option :value="60000">1 minute</option>
+            <option :value="300000">5 minutes</option>
+          </select>
+          <button
+            @click="fetchPosts"
+            class="btn btn-sm btn-outline-secondary ms-2"
+            :disabled="isRefreshing"
+          >
+            <i class="bi bi-arrow-clockwise" :class="{ rotating: isRefreshing }"></i>
+          </button>
+        </div>
+        <div class="text-muted small mt-1" v-if="posts.length > 0">
+          Last updated: {{ new Date().toLocaleTimeString() }}
+        </div>
       </div>
-      <div class="text-muted small mt-1" v-if="posts.length > 0">
-        Last updated: {{ new Date().toLocaleTimeString() }}
+
+      <!-- Sort controls -->
+      <div class="sort-controls">
+        <span class="me-2">Sort by:</span>
+        <div class="btn-group">
+          <button
+            @click="changeSortOrder('newest')"
+            :class="['btn', 'btn-sm', sortOrder === 'newest' ? 'btn-dark' : 'btn-outline-dark']"
+          >
+            Newest
+          </button>
+          <button
+            @click="changeSortOrder('oldest')"
+            :class="['btn', 'btn-sm', sortOrder === 'oldest' ? 'btn-dark' : 'btn-outline-dark']"
+          >
+            Oldest
+          </button>
+        </div>
       </div>
     </div>
 
@@ -370,14 +417,14 @@ onUnmounted(() => {
     <!-- Posts section with empty state -->
     <div v-if="posts.length === 0" class="text-center my-4">
       <p class="text-muted">No posts in this community yet.</p>
-      <button v-if="isAuthenticated" @click="createPost" class="btn btn-primary">
+      <button v-if="isAuthenticated && isJoined" @click="createPost" class="btn btn-primary">
         Create the first post
       </button>
     </div>
 
     <div v-else class="list-group">
       <CommunityPost
-        v-for="post in posts"
+        v-for="post in sortedPosts"
         :key="post.post_id"
         :post="post"
         @click="goToPost(post.post_id)"
@@ -387,10 +434,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.btn {
-  border-radius: 15px;
-}
-
 .refresh-controls {
   background-color: #f8f9fa;
   padding: 10px;
@@ -422,6 +465,10 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
+.action-buttons button {
+  border-radius: 15px;
+}
+
 /* Apply these styles for screens larger than 768px (tablets and up) */
 @media (min-width: 768px) {
   .community-header {
@@ -450,5 +497,24 @@ onUnmounted(() => {
     font-size: 0.875rem;
     padding: 0.375rem 0.5rem;
   }
+}
+
+@media (max-width: 768px) {
+  .d-flex.justify-content-between.align-items-center {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .refresh-controls,
+  .sort-controls {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 </style>

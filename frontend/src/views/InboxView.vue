@@ -214,8 +214,9 @@ watch(
 
 onUnmounted(() => {
   if (socket.value) {
-    socket.value.disconnect()
-    console.log('Socket disconnected on unmount')
+    socket.value.removeAllListeners();
+    socket.value.close();
+    console.log('Socket closed on unmount');
   }
 })
 </script>

@@ -9,12 +9,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Docker
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-
-# Local
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:is213@localhost:3306/post_service"
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
@@ -126,6 +122,5 @@ def update_post_status(post_id):
         db.session.rollback()
         return jsonify({"code": 500, "message": f"Error updating post status: {e}"}), 500
 
-# Run App
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002)
