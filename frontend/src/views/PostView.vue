@@ -115,7 +115,6 @@ const fetchCommunityInfo = async (communityId) => {
 
     if (response.ok) {
       const data = await response.json()
-      console.log(data.data.name)
 
       if (data.code === 200) {
         communityName.value = data.data.name

@@ -67,7 +67,6 @@ const fetchUserCommunities = async () => {
     isLoading.value = true
 
     const creatorId = user.value.sub
-    console.log('Fetching communities for creator ID:', creatorId)
 
     const response = await fetch(`http://localhost:5001/api/community/creator/${creatorId}`)
 
@@ -76,7 +75,6 @@ const fetchUserCommunities = async () => {
     }
 
     const data = await response.json()
-    console.log('Communities API response:', data)
 
     if (data.code === 200) {
       communities.value = data.data.communities
