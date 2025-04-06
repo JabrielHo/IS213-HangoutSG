@@ -233,6 +233,7 @@ const fetchJoinedEvents = async () => {
               v-for="community in communities"
               :key="community.id"
               :community="community"
+              :showStats="false"
               @click="navigateToCommunity(community.name)"
             />
           </div>
@@ -300,6 +301,7 @@ const fetchJoinedEvents = async () => {
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 1px solid #eee;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
 }
 
 .profile-avatar img {
@@ -326,6 +328,8 @@ const fetchJoinedEvents = async () => {
   display: flex;
   border-bottom: 1px solid #ddd;
   margin-bottom: 20px;
+  flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+  gap: 5px; /* Add gap between wrapped tabs */
 }
 
 .tabs button {
@@ -335,6 +339,7 @@ const fetchJoinedEvents = async () => {
   cursor: pointer;
   font-size: 16px;
   position: relative;
+  white-space: nowrap; /* Prevent tab text from wrapping */
 }
 
 .tabs button.active {
@@ -379,5 +384,48 @@ const fetchJoinedEvents = async () => {
 .spinner-border {
   width: 3rem;
   height: 3rem;
+}
+
+/* Add these media queries for mobile responsiveness */
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .profile-info {
+    margin-left: 0;
+    margin-top: 15px;
+  }
+  
+  .tabs {
+    justify-content: center;
+  }
+  
+  .tabs button {
+    padding: 8px 15px;
+    font-size: 14px;
+    flex: 1;
+    text-align: center;
+    min-width: 100px;
+  }
+  
+  .communities-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabs button {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-width: auto;
+  }
+  
+  .profile-avatar img {
+    width: 80px;
+    height: 80px;
+  }
 }
 </style>
