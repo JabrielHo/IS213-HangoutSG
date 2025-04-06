@@ -6,7 +6,7 @@ import CommunityPost from '../components/CommunityPost.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { user, isAuthenticated, isLoading: authLoading } = useAuth0()
+const { user, isAuthenticated } = useAuth0()
 
 const community = ref({})
 const posts = ref([])
@@ -32,10 +32,14 @@ const checkMembershipStatus = async () => {
 
     if (response.ok) {
       const data = await response.json()
-      
-      if (data.Result && data.Result.ErrorMessage === "Member Not Found") {
+
+      if (data.Result && data.Result.ErrorMessage === 'Member Not Found') {
         isJoined.value = false
-      } else if (data.Result && data.Result.Success === true && data.CommunityMemberAPI.status === "joined") {
+      } else if (
+        data.Result &&
+        data.Result.Success === true &&
+        data.CommunityMemberAPI.status === 'joined'
+      ) {
         isJoined.value = true
       } else {
         isJoined.value = false
@@ -251,13 +255,13 @@ const loadInitialData = async () => {
   isLoading.value = true
   await fetchCommunityData()
   await fetchPosts()
-  
+
   if (isAuthenticated.value) {
     await checkMembershipStatus()
   } else {
     isLoading.value = false
   }
-  
+
   startAutoRefresh()
 }
 
@@ -308,7 +312,7 @@ onUnmounted(() => {
         <button @click="viewEvents" class="btn btn-dark me-2 mb-2">
           <i class="bi bi-calendar-event"></i> View Events
         </button>
-        <button v-if="isAuthenticated" @click="createPost" class="btn btn-dark me-2 mb-2">
+        <button v-if="isAuthenticated && isJoined" @click="createPost" class="btn btn-dark me-2 mb-2">
           <i class="bi bi-plus-lg"></i> Create Post
         </button>
         <button

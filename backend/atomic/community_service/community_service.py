@@ -37,7 +37,7 @@ def create_community():
             }), 400
         
         # Check if a community with this name already exists
-        existing_community = Community.query.filter_by(name=data["name"]).first()
+        existing_community = db.session.query(Community).filter_by(name=data["name"]).first()
         if existing_community:
             return jsonify({
                 "code": 409,
@@ -72,7 +72,7 @@ def create_community():
 @app.route("/api/community", methods=["GET"])
 def get_all_communities():
     try:
-        communities = Community.query.all()
+        communities = db.session.query(Community).all()
         return jsonify({
             "code": 200,
             "data": {
@@ -86,11 +86,10 @@ def get_all_communities():
             "message": f"An error occurred while retrieving communities: {str(e)}"
         }), 500
 
-# READ - Get a specific community by ID
 @app.route("/api/community/<string:community_id>", methods=["GET"])
 def get_community(community_id):
     try:
-        community = Community.query.get(community_id)
+        community = db.session.get(Community, community_id)
         if community:
             return jsonify({
                 "code": 200,
@@ -111,7 +110,7 @@ def get_community(community_id):
 @app.route("/api/community/name/<string:community_name>", methods=["GET"])
 def get_community_by_name(community_name):
     try:
-        community = Community.query.filter_by(name=community_name.lower()).first()
+        community = db.session.query(Community).filter_by(name=community_name.lower()).first()
         if community:
             return jsonify({
                 "code": 200,
@@ -132,7 +131,7 @@ def get_community_by_name(community_name):
 @app.route("/api/community/creator/<string:creator_id>", methods=["GET"])
 def get_communities_by_creator(creator_id):
     try:
-        communities = Community.query.filter_by(creator_id=creator_id).all()
+        communities = db.session.query(Community).filter_by(creator_id=creator_id).all()
         return jsonify({
             "code": 200,
             "data": {
@@ -147,6 +146,4 @@ def get_communities_by_creator(creator_id):
         }), 500
 
 if __name__ == "__main__":
-    # Uncomment for docker
     app.run(host="0.0.0.0", port=5001)
-    app.run(port=5001, debug=True)
