@@ -21,7 +21,9 @@ const isJoinLeaveLoading = ref(false)
 const joinLeaveError = ref(null)
 
 const checkMembershipStatus = async () => {
-  if (!isAuthenticated.value || !user.value || !community.value.community_id) return
+  if (!isAuthenticated.value || !user.value || !community.value.community_id) {
+    return
+  }
 
   try {
     const response = await fetch(
@@ -249,7 +251,13 @@ const loadInitialData = async () => {
   isLoading.value = true
   await fetchCommunityData()
   await fetchPosts()
-  await checkMembershipStatus()
+  
+  if (isAuthenticated.value) {
+    await checkMembershipStatus()
+  } else {
+    isLoading.value = false
+  }
+  
   startAutoRefresh()
 }
 

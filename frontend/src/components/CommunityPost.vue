@@ -7,7 +7,7 @@
         <a class="btn btn-sm btn-outline-primary disabled me-2">
           <i class="bi bi-chat-square"></i>&nbsp;{{ post.commentCount }} {{ post.commentCount === 1 ? 'Comment' : 'Comments' }}
         </a>
-        <a href="#" class="btn btn-sm btn-outline-danger" @click.stop="reportPost">
+        <a v-if="isAuthenticated" href="#" class="btn btn-sm btn-outline-danger" @click.stop="reportPost">
           <i class="bi bi-flag"></i>&nbsp;Report
         </a>
       </div>
@@ -16,6 +16,9 @@
 </template>
 
 <script setup>
+import { useAuth0 } from '@auth0/auth0-vue'
+const { isAuthenticated } = useAuth0()
+
 defineProps({
   post: {
     type: Object,
