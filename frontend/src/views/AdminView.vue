@@ -2,103 +2,120 @@
 import { ref, onMounted } from 'vue'
 import ReportCard from '@/components/ReportCard.vue'
 import ReportDetails from '@/components/ReportDetails.vue'
+import {useAuth0 } from '@auth0/auth0-vue'
+import { useRouter } from 'vue-router'
+const { isAuthenticated, user } = useAuth0()
 
 const errorMessage = ref('')
 const flagged_content = ref([])  // Stores flagged content reports
 const selectedReport = ref(null)  // Store the selected report
 const isLoading = ref(true)
+const router = useRouter()
 
-// Simulating fake reports data for testing and styling
-const fakeReports = [
-  {
-    flag_id: 1,
-    poster_id: 101,
-    comment_id: 201,
-    flagged_by: 301,
-    reason: 'Offensive language',
-    status: 'pending',
-    created_at: '2025-04-06T12:00:00Z',
-  },
-  {
-    flag_id: 2,
-    poster_id: 102,
-    comment_id: 202,
-    flagged_by: 302,
-    reason: 'Spam',
-    status: 'pending',
-    created_at: '2025-04-05T15:30:00Z',
-  },
-  {
-    flag_id: 3,
-    poster_id: 103,
-    comment_id: 203,
-    flagged_by: 303,
-    reason: 'Hate speech',
-    status: 'pending',
-    created_at: '2025-04-04T09:15:00Z',
-    comment_content: 'i love hitler'
-  },
-  {
-    flag_id: 4,
-    post_id: 101,
-    poster_id: 1,
-    flagged_by: 2,
-    reason: 'Offensive language',
-    status: 'pending',
-    created_at: '2025-04-06T10:00:00',
-    post_content: 'fuck u crybaby',
-  },
-  {
-    flag_id: 5,
-    post_id: 102,
-    poster_id: 3,
-    flagged_by: 4,
-    reason: 'Spam',
-    status: 'pending',
-    created_at: '2025-04-06T11:00:00',
-    post_content: 'Check out my amazing new product! Only today, 50% off!',
-  },
-  {
-    flag_id: 6,
-    post_id: 103,
-    poster_id: 5,
-    flagged_by: 6,
-    reason: 'Harassment',
-    status: 'pending',
-    created_at: '2025-04-06T12:00:00',
-    post_content: 'You are a terrible person, nobody likes you!',
+const checkLogin = async () => {
+  if (!isAuthenticated.value || !user.value || !user['https://hangoutsg.com/roles']?.includes('admin')) {
+    errorMessage.value = 'You need to be an admin to view this page'
+    router.push('/')  // Redirect to home if not authenticated or not admin
   }
-]
+}
 
 const fetchReports = async () => {
   try {
-    isLoading.value = true
-    // Simulate an API delay
-    setTimeout(() => {
-      flagged_content.value = fakeReports
-      isLoading.value = false
-    }, 1000)  // Simulated 1-second delay
+    isLoading.value = true;
+
+    // Send the fetch request to the API
+    const response = await fetch('http://localhost:5007/api/moderation/get/', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      // Parse the response JSON
+      const data = await response.json();
+      if (data.code === 200) {
+        // Update flagged_content with the list of flagged content
+        flagged_content.value = data.flagged_content;
+      } else {
+        console.log('No reported content found:', data.message);
+      }
+    } else {
+      console.error('Error fetching reports:', response.status, response.statusText);
+    }
   } catch (err) {
-    console.error('Error fetching reports:', err)
+    console.error('Error fetching reports:', err);
+  } finally {
+    // Set loading to false once the request completes
+    isLoading.value = false;
   }
-}
+};
 
 // Handle resolve action for a report
-const handleResolve = (flagId) => {
-  console.log(`Resolved report with flag_id: ${flagId}`)
-  const flagged = flagged_content.value.find(content => content.flag_id === flagId)
-  if (flagged) {
-    flagged.status = 'resolved' // Update the status to resolved
+const handleBan = async (flagId) => {
+  console.log(`Ban report with flag_id: ${flagId}`);
+  
+  try {
+    // Send POST request to /api/ban/content
+    const response = await fetch('http://localhost:5011/api/ban/content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ flagId }), // Send flagId in the request body
+    });
+
+    if (response.ok) {
+      console.log(`Successfully banned content with flag_id: ${flagId}`);
+      
+      // Optionally, update the status in the local state (e.g., set as 'resolved')
+      const flagged = flagged_content.value.find(content => content.flag_id === flagId);
+      if (flagged) {
+        flagged.status = 'banned'; // Update status to 'banned' or 'resolved' as needed
+      }
+      alert('The report has been successfully banned.');
+
+      location.reload();
+
+    } else {
+      const errorData = await response.json();
+      console.error(`Failed to ban content. Error: ${errorData.message}`);
+    }
+  } catch (error) {
+    console.error(`Error while banning content: ${error.message}`);
+    alert('An error occurred while trying to ban the content. Please try again later.');
+
+    location.reload();
   }
 }
 
-// Handle ignore action for a report
-const handleIgnore = (flagId) => {
-  console.log(`Ignored report with flag_id: ${flagId}`)
-  const flagged = flagged_content.value.find(content => content.flag_id === flagId)
-  if (flagged) {
-    flagged.status = 'ignored' // Update the status to ignored
+const handleIgnore = async (flagId) => {
+  console.log(`Ignore report with flag_id: ${flagId}`);
+  try {
+    // Send an empty POST request to the appropriate API URL
+    const response = await fetch(`http://localhost:5007/api/moderation/delete/flag/${flagId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      console.log(`Successfully ignored and deleted report with flag_id: ${flagId}`);
+    } else {
+      const errorData = await response.json();
+      console.error(`Failed to ignore the content. Error: ${errorData.message}`);
+    }
+    alert('The report has been successfully ignored.');
+
+    location.reload();
+  } catch (error) {
+    console.error(`Error while ignoring content: ${error.message}`);
+    alert('An error occurred while trying to ignore the content. Please try again later.');
+
+    location.reload();
   }
+
 }
 
 // Function to handle when a report card is clicked to view details
@@ -108,6 +125,13 @@ const viewReport = (content) => {
 
 onMounted(() => {
   // Check for error params
+  () => isAuthenticated.value,
+  (newAuth) => {
+    if (newAuth) {
+      checkLogin()
+    }
+  }
+  
   const urlParams = new URLSearchParams(window.location.search)
   const error = urlParams.get('error')
 
@@ -119,6 +143,7 @@ onMounted(() => {
   // Fetch reports
   fetchReports()
 })
+
 </script>
 
 <template>
@@ -145,7 +170,7 @@ onMounted(() => {
       v-for="content in flagged_content"
       :key="content.flag_id"
       :content="content"
-      @resolve="handleResolve"
+      @ban="handleBan"
       @ignore="handleIgnore"
       @click="viewReport(content)"
     />
