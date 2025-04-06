@@ -57,7 +57,7 @@ def create_inbox_message():
     message_type = data.get("type")
     
     # Process based on message type
-    if message_type == "event_creation":
+    if message_type == "event_creation" or message_type == "event_deletion":
         # Multi-recipient message
         if "receiver_ids" not in data or "subject" not in data or "content" not in data:
             return jsonify({"error": "Missing required fields for event_creation message"}), 400
