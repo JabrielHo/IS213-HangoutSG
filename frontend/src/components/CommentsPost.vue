@@ -1,26 +1,5 @@
 <template>
   <div class="comments-section">
-    <!-- Comment Submission Form -->
-    <div class="comment-form mb-4">
-      <h4>Add a comment</h4>
-      <div class="form-group">
-        <textarea
-          class="form-control"
-          v-model="newComment"
-          placeholder="What are your thoughts?"
-          rows="3"
-        ></textarea>
-      </div>
-      <button
-        class="btn btn-primary mt-2"
-        @click="submitComment(null)"
-        :disabled="!newComment.trim() || isSubmitting"
-      >
-        <span v-if="isSubmitting">Posting...</span>
-        <span v-else>Post Comment</span>
-      </button>
-    </div>
-
     <!-- Comments List -->
     <div class="comments-list">
       <h4>{{ publishedComments.length }} {{ publishedComments.length === 1 ? 'Comment' : 'Comments' }}</h4>
@@ -49,22 +28,23 @@
             {{ comment.content }}
           </div>
           
-          <!-- Reply button -->
-          <div class="comment-actions mt-2">
+          <!-- Reply button - only shown to authenticated users -->
+          <div v-if="isAuthenticated" class="comment-actions mt-2">
             <button 
               class="btn btn-sm btn-outline-secondary" 
-              @click="toggleReplyForm(comment.comment_id)"
+              @click="$emit('toggle-reply', comment.comment_id)"
             >
               Reply
             </button>
           </div>
           
           <!-- Reply form -->
-          <div v-if="activeReplyId === comment.comment_id" class="reply-form mt-2">
+          <div v-if="isAuthenticated && activeReplyId === comment.comment_id" class="reply-form mt-2">
             <div class="form-group">
               <textarea
                 class="form-control form-control-sm"
-                v-model="replyText"
+                :value="replyText"
+                @input="$emit('update:replyText', $event.target.value)"
                 placeholder="Write a reply..."
                 rows="2"
               ></textarea>
@@ -72,7 +52,7 @@
             <div class="d-flex mt-2">
               <button
                 class="btn btn-sm btn-primary me-2"
-                @click="submitComment(comment.comment_id)"
+                @click="$emit('submit-comment', comment.comment_id)"
                 :disabled="!replyText.trim() || isSubmitting"
               >
                 <span v-if="isSubmitting">Posting...</span>
@@ -80,7 +60,7 @@
               </button>
               <button
                 class="btn btn-sm btn-outline-secondary"
-                @click="cancelReply"
+                @click="$emit('cancel-reply')"
               >
                 Cancel
               </button>
@@ -116,26 +96,42 @@
 export default {
   name: 'CommentsPost',
   props: {
-    postId: {
+    comments: {
+      type: Array,
+      required: true
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    },
+    isSubmitting: {
+      type: Boolean,
+      default: false
+    },
+    replyText: {
       type: String,
-      required: true,
+      default: ''
+    },
+    activeReplyId: {
+      type: String,
+      default: null
     },
     currentUser: {
       type: Object,
-      required: true,
+      required: false,
+      default: null
     },
-  },
-  data() {
-    return {
-      comments: [],
-      newComment: '',
-      replyText: '',
-      activeReplyId: null,
-      isSubmitting: false,
-      loading: true,
-      error: null,
+    isAuthenticated: {
+      type: Boolean,
+      default: false
     }
   },
+  emits: [
+    'update:replyText',
+    'submit-comment',
+    'toggle-reply',
+    'cancel-reply'
+  ],
   computed: {
     // Filter only published comments
     publishedComments() {
@@ -150,21 +146,6 @@ export default {
     // Get replies for a specific comment
     getRepliesForComment(commentId) {
       return this.publishedComments.filter(comment => comment.parent_id === commentId);
-    },
-    // Toggle reply form visibility
-    toggleReplyForm(commentId) {
-      if (this.activeReplyId === commentId) {
-        this.activeReplyId = null;
-        this.replyText = '';
-      } else {
-        this.activeReplyId = commentId;
-        this.replyText = '';
-      }
-    },
-    // Cancel reply
-    cancelReply() {
-      this.activeReplyId = null;
-      this.replyText = '';
     },
     formatTimeAgo(timestamp) {
       if (!timestamp) return 'unknown time'
@@ -185,135 +166,14 @@ export default {
         const days = Math.floor(diffInSeconds / 86400)
         return `${days} ${days === 1 ? 'day' : 'days'} ago`
       }
-    },
-    async fetchUserData(userIds) {
-      const userDataMap = {}
-      await Promise.all(
-        userIds.map(async (userId) => {
-          try {
-            const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
-            if (userResponse.ok) {
-              const userData = await userResponse.json()
-              userDataMap[userId] = userData.data
-            }
-          } catch (error) {
-            console.error(`Error fetching user data for ${userId}:`, error)
-          }
-        })
-      )
-      return userDataMap
-    },
-    async fetchComments() {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await fetch(`http://localhost:5003/api/comments/post/${this.postId}`)
-        if (response.ok) {
-          const data = await response.json()
-          let commentsData = data.data.comments || []
-          
-          // Sort comments with newest first for top-level comments
-          // but keep replies in chronological order
-          commentsData.sort((a, b) => {
-            // If both are top-level or both are replies, sort by time (newest first for top-level)
-            if ((!a.parent_id && !b.parent_id) || (a.parent_id && b.parent_id)) {
-              return !a.parent_id ? 
-                new Date(b.created_at) - new Date(a.created_at) : // Top level: newest first
-                new Date(a.created_at) - new Date(b.created_at);  // Replies: oldest first
-            }
-            // Put top-level comments before replies
-            return a.parent_id ? 1 : -1;
-          });
-          
-          // Extract unique author IDs
-          const uniqueAuthorIds = [...new Set(commentsData.map(comment => comment.author_id))]
-          
-          // Fetch user data for all authors
-          const userDataMap = await this.fetchUserData(uniqueAuthorIds)
-          
-          // Add username to each comment
-          this.comments = commentsData.map(comment => {
-            const userData = userDataMap[comment.author_id]
-            return {
-              ...comment,
-              username: userData ? userData.username : 'Unknown User',
-              // If status isn't provided, default to published
-              status: comment.status || 'published'
-            }
-          })
-        } else {
-          const errorData = await response.json()
-          this.error = errorData.message || 'Failed to load comments'
-          console.error('Error fetching comments:', this.error)
-        }
-      } catch (error) {
-        this.error = 'Network error when fetching comments'
-        console.error('Error fetching comments:', error)
-      } finally {
-        this.loading = false
-      }
-    },
-    async submitComment(parentId) {
-      // Use replyText if it's a reply, otherwise use newComment
-      const commentContent = parentId ? this.replyText.trim() : this.newComment.trim();
-      
-      if (!commentContent) return
-
-      this.isSubmitting = true
-
-      try {
-        const response = await fetch('http://localhost:5003/api/comment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            post_id: this.postId,
-            author_id: this.currentUser.id,
-            content: commentContent,
-            parent_id: parentId, // Include parent_id for replies
-            status: 'published' // Set status to published by default
-          }),
-        })
-
-        if (response.ok) {
-          // Clear the form
-          if (parentId) {
-            this.replyText = '';
-            this.activeReplyId = null;
-          } else {
-            this.newComment = '';
-          }
-          // Refresh comments
-          await this.fetchComments()
-        } else {
-          const errorData = await response.json()
-          alert(`Error posting comment: ${errorData.message}`)
-        }
-      } catch (error) {
-        console.error('Error submitting comment:', error)
-        alert('Failed to submit comment. Please try again.')
-      } finally {
-        this.isSubmitting = false
-      }
-    },
-  },
-  mounted() {
-    this.fetchComments()
-  },
+    }
+  }
 }
 </script>
   
 <style scoped>
 .comments-section {
   margin-top: 2rem;
-}
-
-.comment-form {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
 }
 
 .comments-list {
@@ -367,7 +227,6 @@ export default {
 }
 
 .reply-form {
-  background-color: #f8f9fa;
   padding: 0.75rem;
   border-radius: 6px;
   margin-top: 0.5rem;
