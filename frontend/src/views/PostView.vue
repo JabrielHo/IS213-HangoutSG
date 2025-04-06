@@ -14,7 +14,7 @@
     <div class="post-details">
       <h2>{{ post.title }}</h2>
       <p class="meta">
-        <!-- <span class="author">By {{ user.username}}</span> •  -->
+        <span class="author">By {{ authorUsername }}</span> •
         <span class="date">{{ formatDate(post.created_at) }}</span> •
         <span class="community"
           >in community:
@@ -27,10 +27,22 @@
 
     <hr />
 
+    <!-- Comments section for authenticated users -->
     <CommentsPost
+      v-if="isAuthenticated"
       :postId="$route.params.postId"
-      :currentUser="isAuthenticated ? user.sub : 'anonymous'"
+      :currentUser="{ id: user.sub, username: user.username }"
     />
+    
+    <!-- Login prompt for non-authenticated users -->
+    <div v-else class="login-prompt card p-4 text-center my-4">
+      <h4>Please login or sign up to comment</h4>
+      <p class="text-muted">Join the conversation by logging in or creating an account</p>
+      <div class="d-flex justify-content-center gap-3 mt-3">
+        <LoginButton />
+        <button @click="signUp" class="btn btn-outline-primary">Sign Up</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -39,15 +51,27 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth0 } from '@auth0/auth0-vue'
 import CommentsPost from '../components/CommentsPost.vue'
+import LoginButton from '../components/LoginButton.vue'
 
 const route = useRoute()
-const { user, isAuthenticated, isLoading: authLoading } = useAuth0()
+const { user, isAuthenticated, isLoading: authLoading, loginWithRedirect } = useAuth0()
 
 const post = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const communityName = ref('')
 const communityLoading = ref(false)
+const authorUsername = ref('Loading...')
+
+// Sign up function with screen_hint for Auth0
+const signUp = () => {
+  loginWithRedirect({
+    appState: { 
+      returnTo: window.location.pathname 
+    },
+    screen_hint: 'signup'
+  })
+}
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
@@ -61,6 +85,27 @@ const formatDate = (dateString) => {
   }
 
   return new Date(dateString).toLocaleString(undefined, options)
+}
+
+const fetchAuthorInfo = async (authorId) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/users/${authorId}`)
+    
+    if (response.ok) {
+      const userData = await response.json()
+      if (userData.data && userData.data.username) {
+        authorUsername.value = userData.data.username
+      } else {
+        authorUsername.value = 'Unknown User'
+      }
+    } else {
+      authorUsername.value = 'Unknown User'
+      console.error('HTTP error fetching author:', response.status)
+    }
+  } catch (err) {
+    authorUsername.value = 'Unknown User'
+    console.error('Failed to fetch author info:', err)
+  }
 }
 
 const fetchCommunityInfo = async (communityId) => {
@@ -93,6 +138,7 @@ const fetchCommunityInfo = async (communityId) => {
 const fetchPost = async () => {
   loading.value = true
   error.value = null
+  authorUsername.value = 'Loading...'
 
   const postId = route.params.postId
 
@@ -105,7 +151,12 @@ const fetchPost = async () => {
       if (data.code === 200 && data.data) {
         post.value = data.data
 
-        // Fetch community information once we have the post
+        // Fetch author information
+        if (post.value.author_id) {
+          await fetchAuthorInfo(post.value.author_id)
+        }
+
+        // Fetch community information
         if (post.value.community_id) {
           await fetchCommunityInfo(post.value.community_id)
         }
@@ -169,5 +220,11 @@ onMounted(() => {
   color: #333;
   white-space: pre-line;
   margin-top: 1.5rem;
+}
+
+.login-prompt {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 </style>
