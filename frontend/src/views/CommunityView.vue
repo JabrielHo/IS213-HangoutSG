@@ -33,7 +33,7 @@ const checkMembershipStatus = async () => {
       
       if (data.Result && data.Result.ErrorMessage === "Member Not Found") {
         isJoined.value = false
-      } else if (data.Result && data.Result.Success === true) {
+      } else if (data.Result && data.Result.Success === true && data.CommunityMemberAPI.status === "joined") {
         isJoined.value = true
       } else {
         isJoined.value = false
@@ -75,7 +75,7 @@ const toggleJoinLeave = async () => {
       isJoined.value = true
     } else {
       const leaveResponse = await fetch(
-        `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/updatestatus/${community.value.community_id}/${user.value.sub}?NewStatus=left`,
+        `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/updatestatus/${community.value.community_id}/${user.value.sub}`,
         {
           method: 'PUT',
           headers: {
