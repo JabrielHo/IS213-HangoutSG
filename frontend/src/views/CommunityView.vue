@@ -417,7 +417,7 @@ onUnmounted(() => {
     <!-- Posts section with empty state -->
     <div v-if="posts.length === 0" class="text-center my-4">
       <p class="text-muted">No posts in this community yet.</p>
-      <button v-if="isAuthenticated" @click="createPost" class="btn btn-primary">
+      <button v-if="isAuthenticated && isJoined" @click="createPost" class="btn btn-primary">
         Create the first post
       </button>
     </div>
@@ -504,8 +504,9 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: flex-start !important;
   }
-  
-  .refresh-controls, .sort-controls {
+
+  .refresh-controls,
+  .sort-controls {
     width: 100%;
     margin-bottom: 10px;
   }
