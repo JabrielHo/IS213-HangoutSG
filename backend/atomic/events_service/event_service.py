@@ -131,6 +131,35 @@ def get_event(event_id):
         return jsonify(event_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/events/community/<community_id>", methods=["GET"])
+def get_events_by_community(community_id):
+    """Get all events by community ID"""
+    try:
+        events = db.session.query(Event).filter_by(community_id=community_id, is_deleted=False).all()
+
+        if not events:
+            return jsonify({"error": "No events found for this community"}), 404
+
+        events_data = [
+            {
+                "event_id": event.event_id,
+                "community_id": event.community_id,
+                "organizer_id": event.organizer_id,
+                "title": event.title,
+                "description": event.description,
+                "location": event.location,
+                "event_date": event.event_date,
+                "created_at": event.created_at,
+                "capacity": event.capacity,
+            }
+            for event in events
+        ]
+
+        return jsonify(events_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5004)
