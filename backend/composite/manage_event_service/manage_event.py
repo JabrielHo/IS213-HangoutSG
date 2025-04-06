@@ -11,6 +11,7 @@ app = Flask(__name__)
 
 # Configuration
 EVENTS_SERVICE_URL = os.getenv("EVENTS_SERVICE_URL", "http://localhost:5004")
+OUTSYSTEM_URL = f"https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/membersbycommunity/"
 
 class EventsServiceClient:
     """Client for interacting with the atomic events microservice"""
@@ -63,22 +64,29 @@ events_client = EventsServiceClient(EVENTS_SERVICE_URL)
 def create_event():
     """Composite endpoint to create an event"""
     event_data = request.json
-
-    #get details
-    subject = event_data["title"]
-    content = event_data["description"]
     
     # Validate required fields
     required_fields = ["community_id", "organizer_id", "title", "event_date"]
     for field in required_fields:
         if field not in event_data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+    #get details
+    subject = event_data["title"]
+    content = event_data["description"]
+    community_id = event_data["community_id"]
     
     # get user_ID from community
-    user_id = ["auth0|67cd8623469fee2d24e73bfb"]
+    response = requests.get(OUTSYSTEM_URL + community_id)
 
+    # Check if request was successful
+    if response.status_code == 200:
+        data = response.json()
 
-    # send msg to rabbit MQ
+        # Extract user IDs
+        user_id = [member["user_id"] for member in data.get("CommunityMemberAPI", [])]
+    else:
+        return jsonify(response.text), response.status_code
 
     # Publish notification message to inbox
     inbox_message = {
@@ -106,13 +114,20 @@ def delete_event(event_id):
     event = event_response.json()
     subject = event["title"]
     content = event["description"]
+    community_id = event["community_id"]
 
     
     # get user_ID from community
-    user_id = ["auth0|67cd8623469fee2d24e73bfb"]
+    response = requests.get(OUTSYSTEM_URL + community_id)
 
+    # Check if request was successful
+    if response.status_code == 200:
+        data = response.json()
 
-    # send msg to rabbit MQ
+        # Extract user IDs
+        user_id = [member["user_id"] for member in data.get("CommunityMemberAPI", [])]
+    else:
+        return jsonify(response.text), response.status_code
 
     # Publish notification message to inbox
     inbox_message = {
