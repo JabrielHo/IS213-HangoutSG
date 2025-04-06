@@ -61,22 +61,13 @@ const fetchMemberCount = async (communityId) => {
 // Fetch event count for a specific community
 const fetchEventCount = async (communityId) => {
   try {
-    const response = await fetch(
-      `http://localhost:5004/events/community/${communityId}`
-    )
+    const response = await fetch(`http://localhost:5004/events/community/${communityId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
     }
 
     const data = await response.json()
-
-    // Check if there's an error message indicating no events
-    if (data.error === "No events found for this community") {
-      return 0
-    }
-
-    // Otherwise count the events in the array
     return Array.isArray(data) ? data.length : 0
   } catch (err) {
     console.error(`Error fetching event count for community ${communityId}:`, err)

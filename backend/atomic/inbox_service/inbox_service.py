@@ -4,6 +4,7 @@ from flask_socketio import SocketIO
 import os
 from dotenv import load_dotenv
 from flask_cors import CORS
+from sqlalchemy import select
 
 load_dotenv()
 
@@ -146,8 +147,13 @@ def soft_delete_message(message_id):
 # Get messages for a user
 @app.route("/api/inbox/<string:user_id>", methods=["GET"])
 def get_messages(user_id):
-    try:
-        messages = InboxMessage.query.filter_by(receiver_id=user_id).filter(InboxMessage.status != "deleted").all()
+    try:        
+        stmt = select(InboxMessage).where(
+            InboxMessage.receiver_id == user_id,
+            InboxMessage.status != "deleted"
+        )
+        messages = db.session.execute(stmt).scalars().all()
+        
         return jsonify(
             [
                 {
@@ -165,14 +171,9 @@ def get_messages(user_id):
         print(f"Error retrieving messages for user {user_id}: {str(e)}")
         return jsonify({"error": "Failed to retrieve messages"}), 500
 
-
 @socketio.on("connect")
 def handle_connect():
     print("Client connected")
 
 if __name__ == "__main__":
-    # Uncomment for docker
-    # socketio.run(app, host="0.0.0.0", port=5006, allow_unsafe_werkzeug=True)
-
-    # Uncomment for local
-    socketio.run(app, port=5006, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=5006, allow_unsafe_werkzeug=True)

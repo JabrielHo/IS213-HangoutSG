@@ -61,8 +61,6 @@ def create_community():
         
     except Exception as e:
         db.session.rollback()
-        # Log the actual error for debugging
-        print(f"Exception: {str(e)}")
         return jsonify({
             "code": 500,
             "message": f"An error occurred while creating the community: {str(e)}"
