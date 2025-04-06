@@ -75,20 +75,20 @@ def create_event():
             return jsonify({"error": f"Missing required field: {field}"}), 400
     
     # get user_ID from community
-    user_id = "auth0|67cd8623469fee2d24e73bfb"
+    user_id = ["auth0|67cd8623469fee2d24e73bfb"]
 
 
     # send msg to rabbit MQ
 
-    # Step 4: Publish notification message to inbox
+    # Publish notification message to inbox
     inbox_message = {
         "type": "event_creation",
-        "receiver_id": [user_id],
+        "receiver_ids": user_id,
         "subject": subject,
         "content": content,
     }
 
-    events_client.publish_to_inbox(inbox_message)
+    EventsServiceClient.publish_to_inbox(inbox_message)
 
     # Call atomic service
     result, status_code = events_client.create_event(event_data)
@@ -98,11 +98,31 @@ def create_event():
 @app.route("/api/events/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     """Composite endpoint to delete an event"""
-    # First, verify the event exists
-    event_result, event_status = events_client.get_event(event_id)
+    # Step 1: Check event details and capacity
+    event_response = requests.get(f"{EVENTS_SERVICE_URL}/events/{event_id}")
+    if event_response.status_code != 200:
+        return jsonify({"error": "Event not found"}), 404
+
+    event = event_response.json()
+    subject = event["title"]
+    content = event["description"]
+
     
-    if event_status != 200:
-        return jsonify(event_result), event_status
+    # get user_ID from community
+    user_id = ["auth0|67cd8623469fee2d24e73bfb"]
+
+
+    # send msg to rabbit MQ
+
+    # Publish notification message to inbox
+    inbox_message = {
+        "type": "event_deletion",
+        "receiver_ids": user_id,
+        "subject": "Deletion of " + subject,
+        "content": content,
+    }
+
+    EventsServiceClient.publish_to_inbox(inbox_message)
     
     # Call atomic service to delete
     result, status_code = events_client.delete_event(event_id)
