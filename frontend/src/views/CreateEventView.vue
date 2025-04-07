@@ -134,7 +134,7 @@
           // Format the date in the format expected by the server if necessary
           const formattedEvent = { ...this.event };
           
-          const response = await axios.post('http://localhost:5004/api/events', formattedEvent);
+          const response = await axios.post('http://localhost:5009/api/events', formattedEvent);
           
           if (response.status === 201 || response.status === 200) {
             alert('Event created successfully!');
