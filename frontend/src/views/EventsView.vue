@@ -53,7 +53,7 @@
     </div>
 
     <div class="create-event-container">
-      <router-link to="/create-event" class="create-event-btn">Create Event</router-link>
+      <router-link to="/events-event" class="create-event-btn">Create Event</router-link>
     </div>
   </div>
 </template>
