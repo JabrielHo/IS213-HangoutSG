@@ -46,6 +46,7 @@ services:
       - API_ENDPOINT=http://inbox_service:5006/api/inbox/create
     depends_on:
       - rabbitmq
+      - inbox_service
     networks:
       - app-network
 
@@ -61,9 +62,10 @@ services:
       - EXCHANGE_TYPE=direct
       - REGISTRATION_QUEUE_NAME=event_registration
       - REGISTRATION_ROUTING_KEY=event_registration
-      - REGISTRATION_API_ENDPOINT=http://localhost:5010/api/register_internal
+      - REGISTRATION_API_ENDPOINT=http://register_for_event_service:5010/api/register_internal
     depends_on:
       - rabbitmq
+      - register_for_event_service
     networks:
       - app-network
 
@@ -123,6 +125,18 @@ services:
       - "5002:5002"
     environment:
       - DATABASE_URL=${DATABASE_URL}/post_service
+    networks:
+      - app-network
+
+  comment_service:
+    build:
+      context: ./backend/atomic/comment_service
+      dockerfile: Dockerfile
+    container_name: comment_service
+    ports:
+      - "5003:5003"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/comment_service
     networks:
       - app-network
 
