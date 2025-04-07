@@ -194,4 +194,13 @@ onMounted(() => {
   align-items: center;
   justify-content: flex-end;
 }
+
+.error-alert {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
 </style>
