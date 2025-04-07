@@ -2,9 +2,10 @@
   <div class="events-container">
     <div class="header-container">
       <h1>Events</h1>
-      <div class="create-event-container-top">
+      <div class="create-event-container-top" v-if="currentUserId">
         <router-link to="/events-event" class="create-event-btn">Create Event</router-link>
       </div>
+
     </div>
     
     <p class="welcome-message">
