@@ -13,6 +13,7 @@ CORS(app)
 
 
 # Configuration
+OUTSYSTEM_URL = f"https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/membersbycommunity/"
 EVENTS_SERVICE_URL = os.getenv("EVENTS_SERVICE_URL", "http://localhost:5004")
 REGISTRATION_URL = f"http://localhost:5005/api/registrations/event/"
 
