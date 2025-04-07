@@ -1,6 +1,12 @@
 <template>
   <div class="events-container">
-    <h1>Events</h1>
+    <div class="header-container">
+      <h1>Events</h1>
+      <div class="create-event-container-top">
+        <router-link to="/events-event" class="create-event-btn">Create Event</router-link>
+      </div>
+    </div>
+    
     <p class="welcome-message">
       Looking to join a Event? Discover exciting HangoutSG events happening near you! Explore a wide range of hobbies and meet fellow enthusiasts. Find your next adventure today!
     </p>
@@ -52,10 +58,6 @@
         @register-event="registerForEvent"
         @delete-event="confirmDeleteEvent"
       />
-    </div>
-
-    <div class="create-event-container">
-      <router-link to="/events-event" class="create-event-btn">Create Event</router-link>
     </div>
     
     <!-- Loading overlay for registration and deletion -->
@@ -239,10 +241,17 @@ export default {
   position: relative; /* Important for positioning the overlay */
 }
 
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
 h1 {
   font-size: 2.5rem;
-  margin-bottom: 15px;
   color: #333;
+  margin: 0;
 }
 
 .welcome-message {
@@ -314,9 +323,8 @@ h1 {
   color: #666;
 }
 
-.create-event-container {
-  margin-top: 30px;
-  text-align: center;
+.create-event-container-top {
+  /* No additional styles needed as it inherits the flex layout from header-container */
 }
 
 .create-event-btn {
