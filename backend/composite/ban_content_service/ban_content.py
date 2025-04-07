@@ -15,7 +15,6 @@ EMAIL_SERVICE_URL = os.getenv("EMAIL_SERVICE_URL", "http://localhost:5008/api/em
 POST_SERVICE_URL = os.getenv("POST_SERVICE_URL", "http://localhost:5002/api/post")
 COMMENT_SERVICE_URL = os.getenv("COMMENT_SERVICE_URL", "http://localhost:5003/api/comment")
 CONTENT_MODERATION_URL = os.getenv("CONTENT_MODERATION_URL", "http://localhost:5007/api/moderation")
-INBOX_SERVICE_URL = os.getenv("INBOX_SERVICE_URL", "http://localhost:5006") # <--idk about this
 
 app = Flask(__name__)
 CORS(app)
@@ -192,25 +191,6 @@ def delete_content(content_type, content_id):
 
     return jsonify({"code": 200, "message": f"{content_type} {content_id} deleted"}), 200
 
-def notify_reporter(reporting_user_id, content_id, content_type):
-    """Notify the user who reported the content that it has been banned."""
-    try:
-        # Compose the message content
-        message_content = f"Your report for the {content_type} with ID {content_id} has been successfully processed and banned."
-        
-        # Send the notification message to the reporting user
-        response = requests.post(f"{INBOX_SERVICE_URL}/mock-messages/{reporting_user_id}", json={
-            "content": message_content,
-            "receiver_id": reporting_user_id,
-            "status": "unread"
-        })
-        
-        if response.status_code == 201:
-            print(f"Successfully notified the reporter (User ID: {reporting_user_id})")
-        else:
-            print(f"Failed to notify reporter: {response.status_code}, {response.text}")
-    except Exception as e:
-        print(f"Error notifying reporter: {e}")
 
 
 if __name__ == "__main__":
