@@ -6,7 +6,7 @@
         <span class="report-type">
           {{ content.post_id ? '📮 Post' : '💬 Comment' }}
         </span>
-        <span class="report-status" :class="statusClass">{{ content.status }}</span>
+        
       </div>
 
       <div class="card-content">
@@ -31,10 +31,10 @@
     <!-- Buttons outside of the router-link to trigger their actions -->
     <div class="card-actions">
       <button 
-        class="action-btn resolve-btn"
-        @click.stop="$emit('resolve', content.flag_id)"
+        class="action-btn ban-btn"
+        @click.stop="$emit('ban', content.flag_id)"
       >
-        Resolve
+        Ban
       </button>
       <button 
         class="action-btn ignore-btn"
@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 const props = defineProps({
   content: {
@@ -55,12 +55,8 @@ const props = defineProps({
     required: true
   }
 })
+const getContentPreview = ref('Loading...')  // Initially set to "Loading..."
 
-const getContentPreview = computed(() => {
-  // Check if the content is a post or a comment
-  const text = props.content.post_content || props.content.comment_content || 'No content available';
-  return text;
-})
 
 const formattedDate = computed(() => {
   return new Date(props.content.created_at).toLocaleDateString('en-SG', {
@@ -72,13 +68,40 @@ const formattedDate = computed(() => {
   })
 })
 
-const statusClass = computed(() => {
-  return {
-    'pending': 'status-pending',
-    'resolved': 'status-resolved',
-    'ignored': 'status-ignored'
-  }[props.content.status.toLowerCase()]
-})
+
+const fetchContent = async () => {
+  try {
+    if (props.content.post_id) {
+      // Fetch post content if it's a post
+      const postResponse = await fetch(`http://localhost:5002/api/post/${props.content.post_id}`);
+      if (postResponse.ok) {
+        const postData = await postResponse.json();
+        getContentPreview.value = postData.data.content || 'No content available for this post.';
+      } else {
+        getContentPreview.value = 'Failed to load post content.';
+      }
+    } else if (props.content.comment_id) {
+      // Fetch comment content if it's a comment
+      const commentResponse = await fetch(`http://localhost:5003/api/comment/${props.content.comment_id}`);
+      if (commentResponse.ok) {
+        const commentData = await commentResponse.json();
+        getContentPreview.value = commentData.data.content || 'No content available for this comment.';
+      } else {
+        getContentPreview.value = 'Failed to load comment content.';
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching content:', error);
+    getContentPreview.value = 'Error fetching content.';
+  }
+}
+
+// Fetch content when the component is mounted
+onMounted(() => {
+  fetchContent();
+});
+
+
 </script>
 
 <style scoped>
@@ -173,7 +196,6 @@ const statusClass = computed(() => {
   color: #2c3e50;
   margin-top: 0.25rem;
 }
-
 .card-actions {
   display: flex;
   gap: 0.75rem;
@@ -191,21 +213,22 @@ const statusClass = computed(() => {
   transition: all 0.2s ease;
 }
 
-.resolve-btn {
-  background-color: #27ae60;
+.ban-btn {
+  background-color: #e74c3c;  /* Red for Ban */
   color: white;
 }
 
-.resolve-btn:hover {
-  background-color: #219653;
+.ban-btn:hover {
+  background-color: #c0392b;  /* Darker red on hover */
 }
 
 .ignore-btn {
-  background-color: #e74c3c;
+  background-color: #27ae60;  /* Green for Ignore */
   color: white;
 }
 
 .ignore-btn:hover {
-  background-color: #c0392b;
+  background-color: #2ecc71;  /* Darker green on hover */
 }
+
 </style>

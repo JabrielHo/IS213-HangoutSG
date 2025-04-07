@@ -12,7 +12,7 @@
           v-if="isAuthenticated && post.author_id !== user?.sub"
           href="#"
           class="btn btn-sm btn-outline-danger"
-          @click.stop="reportPost"
+          @click.stop="reportPost(post, $event)"
         >
           <i class="bi bi-flag"></i>&nbsp;Report
         </a>
@@ -23,7 +23,7 @@
 
 <script setup>
 import { useAuth0 } from '@auth0/auth0-vue'
-const { user, isAuthenticated } = useAuth0()
+const { isAuthenticated, user } = useAuth0()
 
 defineProps({
   post: {
@@ -53,12 +53,42 @@ const formatTimeAgo = (timestamp) => {
   }
 }
 
-const reportPost = (event) => {
-  event.preventDefault()
+const reportPost = (post, event) => {
+  event.preventDefault();
   // Simple confirmation for reporting
   if (confirm('Are you sure you want to report this post?')) {
-    // Here you would make an API call to report the post
-    alert('Post reported. Thank you for helping keep the community safe.')
+    
+    const data = {
+      poster_id: post.author_id,
+      user_id: user._rawValue.sub,
+      post_id: post.post_id, 
+      content: post.content,
+      reason: 'No reason provided'
+    };
+    
+    fetch('http://localhost:5007/api/moderation/report/post/'+post.post_id, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json', // Ensure the request body is sent as JSON
+      },
+      body: JSON.stringify(data), // Convert the data object to JSON string
+    })
+      .then(response => {
+        if (response.ok) {
+          // If the response status is 200-299
+          return response.json(); // Parse the JSON response
+        } else {
+          throw new Error('Failed to report the post.');
+        }
+      })
+      .then(data => {
+        // Handle success (response data)
+        alert('Post reported. Thank you for helping keep the community safe.');
+      })
+      .catch(error => {
+        console.error('Error while reporting the post:', error);
+        alert('There was an error while reporting the post.');
+      });
   }
 }
 </script>

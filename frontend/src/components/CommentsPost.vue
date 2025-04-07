@@ -86,6 +86,12 @@
               </div>
             </div>
           </div>
+          <div>
+            <a href="#" class="btn btn-sm btn-outline-danger" @click.stop="reportPost(comment, $event)">
+              <i class="bi bi-flag"></i>&nbsp;Report
+            </a>
+          </div>
+
         </div>
       </div>
     </div>

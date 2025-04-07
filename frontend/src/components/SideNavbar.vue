@@ -170,7 +170,7 @@ onMounted(() => {
         <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end text-small shadow">
           <li><router-link class="dropdown-item" to="/profile">Profile</router-link></li>
           <li v-if="user['https://hangoutsg.com/roles'].includes('admin')">
-            <a class="dropdown-item" href="#">Content Moderation</a>
+            <router-link class="dropdown-item" to="/admin">Content Moderation</router-link>
           </li>
           <li><hr class="dropdown-divider" /></li>
           <li><LogoutButton /></li>
