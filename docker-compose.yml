@@ -270,20 +270,32 @@ services:
     networks:
       - app-network
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: frontend
-  #   ports:
-  #     - "8080:80"
-  #   depends_on:
-  #     - mysql
-  #     - inbox_service
-  #     - community_service
-  #     - kong
-  #   networks:
-  #     - app-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - kong
+      - user_service
+      - community_service
+      - post_service
+      - comment_service
+      - events_service
+      - event_registration_service
+      - inbox_service
+      - content_moderation_service
+      - email_service
+      - manage_event_service
+      - register_for_event_service
+      - ban_content_service
+      - rabbitmq
+      - inbox_queue_consumer
+      - event_registration_queue_consumer
+    networks:
+      - app-network
   
   # swagger-ui:
   #   image: swaggerapi/swagger-ui:latest
