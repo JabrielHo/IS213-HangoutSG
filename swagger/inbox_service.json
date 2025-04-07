@@ -1,0 +1,174 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Inbox Service API",
+      "description": "API for managing user inbox messages",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/api/inbox/create": {
+        "post": {
+          "summary": "Create inbox message(s)",
+          "description": "Creates one or more inbox messages based on message type",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Type of message (event_creation, event_deletion, report_outcome, event_registration_outcome)",
+                      "enum": ["event_creation", "event_deletion", "report_outcome", "event_registration_outcome"]
+                    },
+                    "receiver_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Array of recipient IDs (required for event_creation and event_deletion)"
+                    },
+                    "receiver_id": {
+                      "type": "string",
+                      "description": "Recipient ID (required for report_outcome and event_registration_outcome)"
+                    },
+                    "subject": {
+                      "type": "string",
+                      "description": "Subject of the message"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "Content of the message"
+                    }
+                  },
+                  "required": ["type"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Message(s) created successfully"
+            },
+            "400": {
+              "description": "Invalid input - required fields are missing or message type is unknown"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      },
+      "/api/inbox/read/{message_id}": {
+        "post": {
+          "summary": "Mark message as read",
+          "description": "Changes the status of a message to 'read'",
+          "parameters": [
+            {
+              "name": "message_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the message to mark as read"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Message successfully marked as read"
+            },
+            "404": {
+              "description": "Message not found or already read"
+            }
+          }
+        }
+      },
+      "/api/inbox/delete/{message_id}": {
+        "post": {
+          "summary": "Delete a message",
+          "description": "Performs soft deletion of a message by changing its status to 'deleted'",
+          "parameters": [
+            {
+              "name": "message_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the message to delete"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Message deleted successfully"
+            },
+            "400": {
+              "description": "Message already deleted"
+            },
+            "404": {
+              "description": "Message not found"
+            }
+          }
+        }
+      },
+      "/api/inbox/{user_id}": {
+        "get": {
+          "summary": "Get user messages",
+          "description": "Retrieves all non-deleted messages for a specific user",
+          "parameters": [
+            {
+              "name": "user_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the user to get messages for"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successfully retrieved messages",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "message_id": {
+                          "type": "string"
+                        },
+                        "receiver_id": {
+                          "type": "string"
+                        },
+                        "subject": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["read", "unread", "deleted"]
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      }
+    }
+  }

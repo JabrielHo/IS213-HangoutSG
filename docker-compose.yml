@@ -284,6 +284,23 @@ services:
   #     - kong
   #   networks:
   #     - app-network
+  
+  # swagger-ui:
+  #   image: swaggerapi/swagger-ui:latest
+  #   container_name: swagger-ui
+  #   ports:
+  #     - "80:8080"
+  #   environment:
+  #     - >-
+  #       URLS=[
+  #         {url:"/spec/community_service.json",name:"Community Service"},
+  #         {url:"/spec/inbox_service.json",name:"Inbox Service"},
+  #         {url:"/spec/user_service.json",name:"User Service"},
+  #         {url:"/spec/manage_event_service.json",name:"Manage Event Service"}
+  #       ]
+  #     - PORT=8080
+  #   volumes:
+  #     - ./:/usr/share/nginx/html/spec
 
 networks:
   app-network:

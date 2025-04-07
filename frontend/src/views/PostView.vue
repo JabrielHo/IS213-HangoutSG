@@ -242,7 +242,7 @@ import LoginButton from '../components/LoginButton.vue'
 import SignupButton from '../components/SignupButton.vue'
 
 const route = useRoute()
-const { user, isAuthenticated, isLoading: authLoading, loginWithRedirect } = useAuth0()
+const { user, isAuthenticated, isLoading: authLoading } = useAuth0()
 
 const post = ref(null)
 const loading = ref(true)
