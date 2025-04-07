@@ -95,8 +95,8 @@ def create_event():
     inbox_message = {
         "type": "event_creation",
         "receiver_ids": user_id,
-        "subject": subject,
-        "content": content,
+        "subject": "There is a new event => " + subject,
+        "content": "This is the description of the event => " + content,
     }
 
     EventsServiceClient.publish_to_inbox(inbox_message)
