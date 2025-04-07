@@ -46,8 +46,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
+import { computed, ref, onMounted} from 'vue'
+const fullContent = ref('') 
 const props = defineProps({
   report: Object  // Receiving the report prop
 })
@@ -71,6 +71,35 @@ const statusClass = computed(() => {
   }[status] || 'status-pending'; // Fallback to 'pending' if status is unknown
 })
 
+const fetchReportContent = async () => {
+  try {
+    let response
+    if (props.report.post_id) {
+      // If it's a post, request from port 5002
+      response = await fetch(`http://0.0.0.0:5002/api/post/${props.report.post_id}`)
+    } else if (props.report.comment_id) {
+      // If it's a comment, request from port 5003
+      response = await fetch(`http://0.0.0.0:5003/api/comment/${props.report.comment_id}`)
+    }
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok')
+    }
+
+    const data = await response.json()
+
+    // Update fullContent based on the type (post or comment)
+    if (props.report.post_id) {
+      fullContent.value = data.data.post_content || 'Content not available'
+    } else if (props.report.comment_id) {
+      fullContent.value = data.data.comment_content || 'Content not available'
+    }
+  } catch (error) {
+    console.error('Error fetching content:', error)
+    fullContent.value = 'Failed to fetch content'
+  }
+}
+
 const resolveReport = () => {
   // Handle resolving the report
 }
@@ -78,6 +107,11 @@ const resolveReport = () => {
 const ignoreReport = () => {
   // Handle ignoring the report
 }
+
+onMounted(() => {
+  fetchReportContent()
+})
+
 </script>
 
 <style scoped>

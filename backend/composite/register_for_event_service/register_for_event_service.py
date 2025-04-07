@@ -217,7 +217,6 @@ def process_registration():
         }
         publish_to_inbox(inbox_message)
 
-        # Return response to queue processor
         if registration_successful:
             return (
                 jsonify({"success": True, "message": result_message, "event": event}),
