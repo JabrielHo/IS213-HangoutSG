@@ -84,7 +84,7 @@ def ban_content():
         return jsonify({"code": 400, "message": "Missing flag_id in request body"}), 400
 
     try:
-        response = requests.get(CONTENT_MODERATION_URL+ "/"+ flag_id)
+        response = requests.get(CONTENT_MODERATION_URL+ "/get/"+ flag_id)
         
         if response.status_code != 200:
             return jsonify({"code": 500, "message": "Failed to fetch content details"}), 500
