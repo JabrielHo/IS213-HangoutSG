@@ -27,31 +27,61 @@
 
     <hr />
 
-    <!-- Comments section for authenticated users -->
-    <CommentsPost
-      v-if="isAuthenticated"
-      :postId="$route.params.postId"
-      :currentUser="{ id: user.sub, username: user.username }"
-    />
-    
+    <!-- Comment form for authenticated users only -->
+    <div v-if="isAuthenticated" class="comment-form mb-4">
+      <h4>Add a comment</h4>
+      <div class="form-group">
+        <textarea
+          class="form-control"
+          v-model="newComment"
+          placeholder="What are your thoughts?"
+          rows="3"
+        ></textarea>
+      </div>
+      <button
+        class="btn btn-primary mt-2"
+        @click="submitComment(null)"
+        :disabled="!newComment.trim() || isSubmittingComment"
+      >
+        <span v-if="isSubmittingComment">Posting...</span>
+        <span v-else>Post Comment</span>
+      </button>
+    </div>
+
     <!-- Login prompt for non-authenticated users -->
-    <div v-else class="login-prompt card p-4 text-center my-4">
+    <div v-else class="login-prompt card p-4 text-center my-4 text-white bg-dark">
       <h4>Please login or sign up to comment</h4>
-      <p class="text-muted">Join the conversation by logging in or creating an account</p>
+      <p>Join the conversation by logging in or creating an account</p>
       <div class="d-flex justify-content-center gap-3 mt-3">
-        <LoginButton />
-        <button @click="signUp" class="btn btn-outline-primary">Sign Up</button>
+        <LoginButton/>
+        <SignupButton />
       </div>
     </div>
+
+    <!-- Comments section for all users - authenticated or not -->
+    <CommentsPost
+      :comments="comments"
+      :loading="commentsLoading"
+      :isSubmitting="isSubmittingComment"
+      :replyText="replyText"
+      :activeReplyId="activeReplyId"
+      :currentUser="isAuthenticated ? { id: user.sub, username: user.username } : null"
+      :isAuthenticated="isAuthenticated"
+      @update:replyText="replyText = $event"
+      @submit-comment="submitComment"
+      @toggle-reply="toggleReplyForm"
+      @cancel-reply="cancelReply"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth0 } from '@auth0/auth0-vue'
 import CommentsPost from '../components/CommentsPost.vue'
 import LoginButton from '../components/LoginButton.vue'
+import SignupButton from '../components/SignupButton.vue'
 
 const route = useRoute()
 const { user, isAuthenticated, isLoading: authLoading, loginWithRedirect } = useAuth0()
@@ -63,14 +93,26 @@ const communityName = ref('')
 const communityLoading = ref(false)
 const authorUsername = ref('Loading...')
 
-// Sign up function with screen_hint for Auth0
-const signUp = () => {
-  loginWithRedirect({
-    appState: { 
-      returnTo: window.location.pathname 
-    },
-    screen_hint: 'signup'
-  })
+// Comments-related state moved from CommentsPost
+const comments = ref([])
+const commentsLoading = ref(true)
+const commentsError = ref(null)
+const newComment = ref('')
+const replyText = ref('')
+const activeReplyId = ref(null)
+const isSubmittingComment = ref(false)
+
+// Comments computed properties
+const publishedComments = computed(() => {
+  return comments.value.filter(comment => comment.status === 'published');
+})
+
+const topLevelComments = computed(() => {
+  return publishedComments.value.filter(comment => !comment.parent_id);
+})
+
+const getRepliesForComment = (commentId) => {
+  return publishedComments.value.filter(comment => comment.parent_id === commentId);
 }
 
 const formatDate = (dateString) => {
@@ -85,6 +127,49 @@ const formatDate = (dateString) => {
   }
 
   return new Date(dateString).toLocaleString(undefined, options)
+}
+
+const formatTimeAgo = (timestamp) => {
+  if (!timestamp) return 'unknown time'
+
+  const now = new Date()
+  const commentDate = new Date(timestamp)
+  const diffInSeconds = Math.floor((now - commentDate) / 1000)
+
+  if (diffInSeconds < 60) {
+    return 'just now'
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60)
+    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600)
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
+  } else {
+    const days = Math.floor(diffInSeconds / 86400)
+    return `${days} ${days === 1 ? 'day' : 'days'} ago`
+  }
+}
+
+// Toggle reply form visibility
+const toggleReplyForm = (commentId) => {
+  if (!isAuthenticated.value) {
+    // Don't allow toggling replies if not authenticated
+    return;
+  }
+  
+  if (activeReplyId.value === commentId) {
+    activeReplyId.value = null;
+    replyText.value = '';
+  } else {
+    activeReplyId.value = commentId;
+    replyText.value = '';
+  }
+}
+
+// Cancel reply
+const cancelReply = () => {
+  activeReplyId.value = null;
+  replyText.value = '';
 }
 
 const fetchAuthorInfo = async (authorId) => {
@@ -115,6 +200,7 @@ const fetchCommunityInfo = async (communityId) => {
 
     if (response.ok) {
       const data = await response.json()
+      console.log(data.data.name)
 
       if (data.code === 200) {
         communityName.value = data.data.name
@@ -131,6 +217,129 @@ const fetchCommunityInfo = async (communityId) => {
     console.error('Failed to fetch community info:', err)
   } finally {
     communityLoading.value = false
+  }
+}
+
+// Moved from CommentsPost
+const fetchUserData = async (userIds) => {
+  const userDataMap = {}
+  await Promise.all(
+    userIds.map(async (userId) => {
+      try {
+        const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          userDataMap[userId] = userData.data
+        }
+      } catch (error) {
+        console.error(`Error fetching user data for ${userId}:`, error)
+      }
+    })
+  )
+  return userDataMap
+}
+
+// Fetch comments - moved from CommentsPost
+const fetchComments = async () => {
+  commentsLoading.value = true
+  commentsError.value = null
+
+  try {
+    const response = await fetch(`http://localhost:5003/api/comments/post/${route.params.postId}`)
+    if (response.ok) {
+      const data = await response.json()
+      let commentsData = data.data.comments || []
+      
+      // Sort comments with newest first for top-level comments
+      // but keep replies in chronological order
+      commentsData.sort((a, b) => {
+        // If both are top-level or both are replies, sort by time (newest first for top-level)
+        if ((!a.parent_id && !b.parent_id) || (a.parent_id && b.parent_id)) {
+          return !a.parent_id ? 
+            new Date(b.created_at) - new Date(a.created_at) : // Top level: newest first
+            new Date(a.created_at) - new Date(b.created_at);  // Replies: oldest first
+        }
+        // Put top-level comments before replies
+        return a.parent_id ? 1 : -1;
+      });
+      
+      // Extract unique author IDs
+      const uniqueAuthorIds = [...new Set(commentsData.map(comment => comment.author_id))]
+      
+      // Fetch user data for all authors
+      const userDataMap = await fetchUserData(uniqueAuthorIds)
+      
+      // Add username to each comment
+      comments.value = commentsData.map(comment => {
+        const userData = userDataMap[comment.author_id]
+        return {
+          ...comment,
+          username: userData ? userData.username : 'Unknown User',
+          // If status isn't provided, default to published
+          status: comment.status || 'published'
+        }
+      })
+    } else {
+      const errorData = await response.json()
+      commentsError.value = errorData.message || 'Failed to load comments'
+      console.error('Error fetching comments:', commentsError.value)
+    }
+  } catch (error) {
+    commentsError.value = 'Network error when fetching comments'
+    console.error('Error fetching comments:', error)
+  } finally {
+    commentsLoading.value = false
+  }
+}
+
+// Submit comment - moved from CommentsPost
+const submitComment = async (parentId) => {
+  // Ensure user is authenticated before submitting
+  if (!isAuthenticated.value) {
+    return;
+  }
+  
+  // Use replyText if it's a reply, otherwise use newComment
+  const commentContent = parentId ? replyText.value.trim() : newComment.value.trim();
+  
+  if (!commentContent) return
+
+  isSubmittingComment.value = true
+
+  try {
+    const response = await fetch('http://localhost:5003/api/comment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        post_id: route.params.postId,
+        author_id: user.value.sub,
+        content: commentContent,
+        parent_id: parentId, // Include parent_id for replies
+        status: 'published' // Set status to published by default
+      }),
+    })
+
+    if (response.ok) {
+      // Clear the form
+      if (parentId) {
+        replyText.value = '';
+        activeReplyId.value = null;
+      } else {
+        newComment.value = '';
+      }
+      // Refresh comments
+      await fetchComments()
+    } else {
+      const errorData = await response.json()
+      alert(`Error posting comment: ${errorData.message}`)
+    }
+  } catch (error) {
+    console.error('Error submitting comment:', error)
+    alert('Failed to submit comment. Please try again.')
+  } finally {
+    isSubmittingComment.value = false
   }
 }
 
@@ -159,6 +368,9 @@ const fetchPost = async () => {
         if (post.value.community_id) {
           await fetchCommunityInfo(post.value.community_id)
         }
+        
+        // Fetch comments for the post
+        await fetchComments()
       } else {
         error.value = data.message || 'Failed to fetch post'
       }
@@ -225,5 +437,12 @@ onMounted(() => {
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Added styles for comment form */
+.comment-form {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
 }
 </style>

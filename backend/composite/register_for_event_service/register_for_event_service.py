@@ -96,7 +96,7 @@ def register_for_event():
         user_id = data["user_id"]
 
         # Check if event exists first
-        event_response = requests.get(f"{EVENT_SERVICE_URL}/events/{event_id}")
+        event_response = requests.get(f"{EVENT_SERVICE_URL}/api/events/{event_id}")
         if event_response.status_code != 200:
             return jsonify({"error": "Event not found"}), 404
 
@@ -167,7 +167,7 @@ def process_registration():
         user_id = data["user_id"]
 
         # Step 1: Check event details and capacity
-        event_response = requests.get(f"{EVENT_SERVICE_URL}/events/{event_id}")
+        event_response = requests.get(f"{EVENT_SERVICE_URL}/api/events/{event_id}")
         if event_response.status_code != 200:
             return jsonify({"error": "Event not found"}), 404
 

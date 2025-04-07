@@ -1,26 +1,5 @@
 <template>
   <div class="comments-section">
-    <!-- Comment Submission Form -->
-    <div class="comment-form mb-4">
-      <h4>Add a comment</h4>
-      <div class="form-group">
-        <textarea
-          class="form-control"
-          v-model="newComment"
-          placeholder="What are your thoughts?"
-          rows="3"
-        ></textarea>
-      </div>
-      <button
-        class="btn btn-primary mt-2"
-        @click="submitComment(null)"
-        :disabled="!newComment.trim() || isSubmitting"
-      >
-        <span v-if="isSubmitting">Posting...</span>
-        <span v-else>Post Comment</span>
-      </button>
-    </div>
-
     <!-- Comments List -->
     <div class="comments-list">
       <h4>{{ publishedComments.length }} {{ publishedComments.length === 1 ? 'Comment' : 'Comments' }}</h4>
@@ -49,22 +28,23 @@
             {{ comment.content }}
           </div>
           
-          <!-- Reply button -->
-          <div class="comment-actions mt-2">
+          <!-- Reply button - only shown to authenticated users -->
+          <div v-if="isAuthenticated" class="comment-actions mt-2">
             <button 
               class="btn btn-sm btn-outline-secondary" 
-              @click="toggleReplyForm(comment.comment_id)"
+              @click="$emit('toggle-reply', comment.comment_id)"
             >
               Reply
             </button>
           </div>
           
           <!-- Reply form -->
-          <div v-if="activeReplyId === comment.comment_id" class="reply-form mt-2">
+          <div v-if="isAuthenticated && activeReplyId === comment.comment_id" class="reply-form mt-2">
             <div class="form-group">
               <textarea
                 class="form-control form-control-sm"
-                v-model="replyText"
+                :value="replyText"
+                @input="$emit('update:replyText', $event.target.value)"
                 placeholder="Write a reply..."
                 rows="2"
               ></textarea>
@@ -72,7 +52,7 @@
             <div class="d-flex mt-2">
               <button
                 class="btn btn-sm btn-primary me-2"
-                @click="submitComment(comment.comment_id)"
+                @click="$emit('submit-comment', comment.comment_id)"
                 :disabled="!replyText.trim() || isSubmitting"
               >
                 <span v-if="isSubmitting">Posting...</span>
@@ -80,7 +60,7 @@
               </button>
               <button
                 class="btn btn-sm btn-outline-secondary"
-                @click="cancelReply"
+                @click="$emit('cancel-reply')"
               >
                 Cancel
               </button>
@@ -122,26 +102,42 @@
 export default {
   name: 'CommentsPost',
   props: {
-    postId: {
+    comments: {
+      type: Array,
+      required: true
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    },
+    isSubmitting: {
+      type: Boolean,
+      default: false
+    },
+    replyText: {
       type: String,
-      required: true,
+      default: ''
+    },
+    activeReplyId: {
+      type: String,
+      default: null
     },
     currentUser: {
       type: Object,
-      required: true,
+      required: false,
+      default: null
     },
-  },
-  data() {
-    return {
-      comments: [],
-      newComment: '',
-      replyText: '',
-      activeReplyId: null,
-      isSubmitting: false,
-      loading: true,
-      error: null,
+    isAuthenticated: {
+      type: Boolean,
+      default: false
     }
   },
+  emits: [
+    'update:replyText',
+    'submit-comment',
+    'toggle-reply',
+    'cancel-reply'
+  ],
   computed: {
     // Filter only published comments
     publishedComments() {
@@ -156,21 +152,6 @@ export default {
     // Get replies for a specific comment
     getRepliesForComment(commentId) {
       return this.publishedComments.filter(comment => comment.parent_id === commentId);
-    },
-    // Toggle reply form visibility
-    toggleReplyForm(commentId) {
-      if (this.activeReplyId === commentId) {
-        this.activeReplyId = null;
-        this.replyText = '';
-      } else {
-        this.activeReplyId = commentId;
-        this.replyText = '';
-      }
-    },
-    // Cancel reply
-    cancelReply() {
-      this.activeReplyId = null;
-      this.replyText = '';
     },
     formatTimeAgo(timestamp) {
       if (!timestamp) return 'unknown time'
@@ -353,12 +334,6 @@ async reportPost(comment, event) {
 <style scoped>
 .comments-section {
   margin-top: 2rem;
-}
-
-.comment-form {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
 }
 
 .comments-list {
