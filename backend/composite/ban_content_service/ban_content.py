@@ -15,7 +15,6 @@ EMAIL_SERVICE_URL = os.getenv("EMAIL_SERVICE_URL", "http://localhost:5008/api/em
 POST_SERVICE_URL = os.getenv("POST_SERVICE_URL", "http://localhost:5002/api/post")
 COMMENT_SERVICE_URL = os.getenv("COMMENT_SERVICE_URL", "http://localhost:5003/api/comment")
 CONTENT_MODERATION_URL = os.getenv("CONTENT_MODERATION_URL", "http://localhost:5007/api/moderation")
-INBOX_SERVICE_URL = os.getenv("INBOX_SERVICE_URL", "http://localhost:5006") # <--idk about this
 
 app = Flask(__name__)
 CORS(app)
@@ -23,10 +22,10 @@ CORS(app)
 
 def publish_to_inbox(message):
     try:
-        amqp_host = os.environ.get("RABBITMQ_HOST", "localhost")
-        amqp_port = int(os.environ.get("RABBITMQ_PORT", 5672))
-        exchange_name = os.environ.get("EXCHANGE_NAME", "hangout_exchange")
-        routing_key = os.environ.get("ROUTING_KEY", "inbox_message")
+        amqp_host = os.getenv("RABBITMQ_HOST", "localhost")
+        amqp_port = int(os.getenv("RABBITMQ_PORT", 5672))
+        exchange_name = os.getenv("EXCHANGE_NAME", "hangout_exchange")
+        routing_key = os.getenv("ROUTING_KEY", "inbox_message")
 
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=amqp_host, port=amqp_port)
@@ -149,9 +148,8 @@ def ban_content():
         response = requests.post(f"http://localhost:5000/api/users/ban/{author_id}",json={"reason": "Inappropriate content reported"})
 
         # Remove from moderation records
-        mod_delete_url = f"{CONTENT_MODERATION_URL}/delete/{content_type}/{content_id}"
+        mod_delete_url = f"{CONTENT_MODERATION_URL}/delete/flag/{flag_id}"
         mod_delete_response = requests.post(mod_delete_url)
-
         if mod_delete_response.status_code != 200:
             return jsonify({"code": 500, "message": "Failed to delete moderation record"}), 500
 
@@ -193,26 +191,7 @@ def delete_content(content_type, content_id):
 
     return jsonify({"code": 200, "message": f"{content_type} {content_id} deleted"}), 200
 
-def notify_reporter(reporting_user_id, content_id, content_type):
-    """Notify the user who reported the content that it has been banned."""
-    try:
-        # Compose the message content
-        message_content = f"Your report for the {content_type} with ID {content_id} has been successfully processed and banned."
-        
-        # Send the notification message to the reporting user
-        response = requests.post(f"{INBOX_SERVICE_URL}/mock-messages/{reporting_user_id}", json={
-            "content": message_content,
-            "receiver_id": reporting_user_id,
-            "status": "unread"
-        })
-        
-        if response.status_code == 201:
-            print(f"Successfully notified the reporter (User ID: {reporting_user_id})")
-        else:
-            print(f"Failed to notify reporter: {response.status_code}, {response.text}")
-    except Exception as e:
-        print(f"Error notifying reporter: {e}")
 
 
 if __name__ == "__main__":
-    app.run(port=5011, debug=True)
+    app.run(host="0.0.0.0", port=5011)

@@ -3,4 +3,4 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["python", "./content_moderation.py"]
+CMD ["python", "./register_for_event_service.py"]

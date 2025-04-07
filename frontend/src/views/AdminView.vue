@@ -1,21 +1,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import ReportCard from '@/components/ReportCard.vue'
-import ReportDetails from '@/components/ReportDetails.vue'
-import {useAuth0 } from '@auth0/auth0-vue'
-import { useRouter } from 'vue-router'
+import { useAuth0 } from '@auth0/auth0-vue'
+
 const { isAuthenticated, user } = useAuth0()
 
 const errorMessage = ref('')
 const flagged_content = ref([])  // Stores flagged content reports
-const selectedReport = ref(null)  // Store the selected report
 const isLoading = ref(true)
-const router = useRouter()
 
 const checkLogin = async () => {
   if (!isAuthenticated.value || !user.value || !user['https://hangoutsg.com/roles']?.includes('admin')) {
     errorMessage.value = 'You need to be an admin to view this page'
-    router.push('/')  // Redirect to home if not authenticated or not admin
   }
 }
 
@@ -53,7 +49,7 @@ const fetchReports = async () => {
 
 // Handle resolve action for a report
 const handleBan = async (flagId) => {
-  console.log(`Ban report with flag_id: ${flagId}`);
+  console.log(`Ban report with flag_id: ${flagId}`)
   
   try {
     // Send POST request to /api/ban/content
@@ -66,7 +62,7 @@ const handleBan = async (flagId) => {
     });
 
     if (response.ok) {
-      console.log(`Successfully banned content with flag_id: ${flagId}`);
+      console.log(`Successfully banned content with flag_id: ${flagId}`)
       
       // Optionally, update the status in the local state (e.g., set as 'resolved')
       const flagged = flagged_content.value.find(content => content.flag_id === flagId);
@@ -90,7 +86,7 @@ const handleBan = async (flagId) => {
 }
 
 const handleIgnore = async (flagId) => {
-  console.log(`Ignore report with flag_id: ${flagId}`);
+  console.log(`Ignore report with flag_id: ${flagId}`)
   try {
     // Send an empty POST request to the appropriate API URL
     const response = await fetch(`http://localhost:5007/api/moderation/delete/flag/${flagId}`, {
@@ -116,11 +112,6 @@ const handleIgnore = async (flagId) => {
     location.reload();
   }
 
-}
-
-// Function to handle when a report card is clicked to view details
-const viewReport = (content) => {
-  selectedReport.value = content  // Set the selected report to the clicked report
 }
 
 onMounted(() => {
@@ -172,12 +163,8 @@ onMounted(() => {
       :content="content"
       @ban="handleBan"
       @ignore="handleIgnore"
-      @click="viewReport(content)"
     />
   </div>
-
-  <!-- Display ReportDetails component when a report is selected -->
-  <ReportDetails v-if="selectedReport" :report="selectedReport" />
 
   <div v-if="flagged_content.length === 0 && !isLoading" class="text-center p-4 text-muted">
     No reported content found.

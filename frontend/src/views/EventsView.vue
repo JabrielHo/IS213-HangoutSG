@@ -1,406 +1,247 @@
-<script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-
-// Sample data for carousel
-const events = ref([
-  {
-    id: 1,
-    title: 'Photography Workshop',
-    description: 'Learn the basics of photography in this hands-on workshop',
-    location: 'Central Library',
-    eventDate: '2025-04-15T14:00',
-    capacity: 20,
-    image: 'https://placehold.co/600x400/orange/white?text=Photography+Workshop'
-  },
-  {
-    id: 2,
-    title: 'Hiking Adventure',
-    description: 'Join us for a scenic hike through the nature reserve',
-    location: 'MacRitchie Reservoir',
-    eventDate: '2025-04-20T08:00',
-    capacity: 15,
-    image: 'https://placehold.co/600x400/green/white?text=Hiking+Adventure'
-  },
-  {
-    id: 3,
-    title: 'Board Game Night',
-    description: 'Fun evening of strategy games and new friends',
-    location: 'The Mind Café',
-    eventDate: '2025-04-12T19:00',
-    capacity: 30,
-    image: 'https://placehold.co/600x400/purple/white?text=Board+Game+Night'
-  }
-]);
-
-// Sample communities for dropdown
-const communities = ref([
-  { id: 'sports-123', name: 'Sports & Fitness' },
-  { id: 'tech-456', name: 'Tech Enthusiasts' },
-  { id: 'art-789', name: 'Art & Photography' },
-  { id: 'food-101', name: 'Food & Cooking' },
-  { id: 'music-202', name: 'Music Lovers' }
-]);
-
-// Form data
-const newEvent = ref({
-  communityId: '',
-  title: '',
-  description: '',
-  location: '',
-  eventDate: '',
-  capacity: null
-});
-
-// Carousel controls
-const currentSlide = ref(0);
-
-const nextSlide = () => {
-  currentSlide.value = (currentSlide.value + 1) % events.value.length;
-};
-
-const prevSlide = () => {
-  currentSlide.value = (currentSlide.value - 1 + events.value.length) % events.value.length;
-};
-
-// Form submission
-const submitForm = () => {
-  console.log('Event submitted:', newEvent.value);
-  // Here you would typically send the data to your backend
-  alert('Event created successfully!');
-  
-  // Reset form
-  newEvent.value = {
-    communityId: '',
-    title: '',
-    description: '',
-    location: '',
-    eventDate: '',
-    capacity: null
-  };
-};
-
-// Automatically rotate carousel every 5 seconds
-let carouselInterval;
-onMounted(() => {
-  carouselInterval = setInterval(() => {
-    nextSlide();
-  }, 5000);
-});
-
-// Clean up interval when component is unmounted
-onBeforeUnmount(() => {
-  clearInterval(carouselInterval);
-});
-</script>
-
 <template>
-  <h1 class="heading">Events</h1>
-  <p>
-    Looking for something to do? Discover exciting HangoutSG events happening near you! Explore a
-    wide range of hobbies and meet fellow enthusiasts. Find your next adventure today!
-  </p>
+  <div class="events-container">
+    <h1>Events</h1>
+    <p class="welcome-message">
+      Looking to join a Event? Discover exciting HangoutSG events happening near you! Explore a wide range of hobbies and meet fellow enthusiasts. Find your next adventure today!
+    </p>
 
-  <hr />
-
-  <!-- Event Carousel -->
-  <div class="carousel-container">
-    <h2>Upcoming Events</h2>
-    <div class="carousel">
-      <button class="carousel-control prev" @click="prevSlide">&#10094;</button>
-      
-      <div class="carousel-content">
-        <div 
-          v-for="(event, index) in events" 
-          :key="event.id"
-          class="carousel-slide"
-          :class="{ active: index === currentSlide }"
-        >
-          <div class="event-card">
-            <img :src="event.image" :alt="event.title" class="event-image">
-            <div class="event-details">
-              <h3>{{ event.title }}</h3>
-              <p><strong>Date:</strong> {{ new Date(event.eventDate).toLocaleString() }}</p>
-              <p><strong>Location:</strong> {{ event.location }}</p>
-              <p>{{ event.description }}</p>
-              <p><strong>Capacity:</strong> {{ event.capacity }} people</p>
-              <button class="register-btn">Register Now</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <button class="carousel-control next" @click="nextSlide">&#10095;</button>
-    </div>
-    
-    <div class="carousel-indicators">
-      <span 
-        v-for="(event, index) in events" 
-        :key="`indicator-${index}`"
-        class="indicator" 
-        :class="{ active: index === currentSlide }"
-        @click="currentSlide = index"
-      ></span>
-    </div>
-  </div>
-
-  <hr />
-
-  <!-- Create Event Form -->
-  <div class="create-event">
-    <h2>Create New Event</h2>
-    <form @submit.prevent="submitForm">
-      <div class="form-group">
-        <label for="communityId">Community*</label>
-        <select 
-          id="communityId" 
-          v-model="newEvent.communityId" 
-          required
-          class="form-select"
-        >
-          <option value="" disabled>Select a community</option>
-          <option 
-            v-for="community in communities" 
-            :key="community.id" 
-            :value="community.id"
-          >
-            {{ community.name }} ({{ community.id }})
+    <div class="filter-container">
+      <div class="filter-section">
+        <label for="communityFilter">Filter by Community:</label>
+        <select id="communityFilter" v-model="selectedCommunity" @change="filterEvents">
+          <option value="">All Communities</option>
+          <option v-for="community in communities" :key="community.community_id" :value="community.community_id">
+            {{ community.name }}
           </option>
         </select>
       </div>
       
-      <div class="form-group">
-        <label for="title">Event Title*</label>
-        <input 
-          type="text" 
-          id="title" 
-          v-model="newEvent.title" 
-          required
-          placeholder="Enter a descriptive title"
+      <div class="sort-section">
+        <span>Sort by:</span>
+        <button 
+          @click="sortEvents('newest')" 
+          :class="{ 'active': sortOrder === 'newest' }"
+          class="sort-btn"
         >
-      </div>
-      
-      <div class="form-group">
-        <label for="description">Description*</label>
-        <textarea 
-          id="description" 
-          v-model="newEvent.description" 
-          required
-          rows="4"
-          placeholder="Describe your event"
-        ></textarea>
-      </div>
-      
-      <div class="form-group">
-        <label for="location">Location*</label>
-        <input 
-          type="text" 
-          id="location" 
-          v-model="newEvent.location" 
-          required
-          placeholder="Where will the event be held?"
+          Newest
+        </button>
+        <button 
+          @click="sortEvents('oldest')" 
+          :class="{ 'active': sortOrder === 'oldest' }"
+          class="sort-btn"
         >
+          Oldest
+        </button>
       </div>
-      
-      <div class="form-group">
-        <label for="eventDate">Event Date and Time*</label>
-        <input 
-          type="datetime-local" 
-          id="eventDate" 
-          v-model="newEvent.eventDate" 
-          required
-        >
-      </div>
-      
-      <div class="form-group">
-        <label for="capacity">Capacity*</label>
-        <input 
-          type="number" 
-          id="capacity" 
-          v-model="newEvent.capacity" 
-          required
-          min="1"
-          placeholder="Maximum number of participants"
-        >
-      </div>
-      
-      <button type="submit" class="submit-btn">Create Event</button>
-    </form>
+    </div>
+
+    <div v-if="loading" class="loading">
+      Loading events...
+    </div>
+    
+    <div v-else-if="filteredEvents.length === 0" class="no-events">
+      <p>No events found. Why not create one?</p>
+    </div>
+    
+    <div v-else class="events-grid">
+      <EventCard 
+        v-for="event in filteredEvents" 
+        :key="event.event_id" 
+        :event="event" 
+        :userId="currentUserId"
+      />
+    </div>
+
+    <div class="create-event-container">
+      <router-link to="/create-event" class="create-event-btn">Create Event</router-link>
+    </div>
   </div>
 </template>
 
-<style>
-.heading {
-  color: #333;
+<script>
+import axios from 'axios';
+import EventCard from '@/components/EventCard.vue';
+import { useAuth0 } from '@auth0/auth0-vue'
+
+export default {
+  name: 'EventsView',
+  components: {
+    EventCard
+  },
+  setup() {
+    const { user, isAuthenticated } = useAuth0()
+
+    return {user, isAuthenticated}
+  },
+  data() {
+    return {
+      events: [],
+      communities: [],
+      selectedCommunity: '',
+      loading: true,
+      error: null,
+      sortOrder: 'newest',
+    };
+  },
+  computed: {
+    currentUserId() {
+      return this.isAuthenticated && this.user ? this.user.sub : null
+    },
+    filteredEvents() {
+      // First filter by community if one is selected
+      let filtered = this.selectedCommunity 
+        ? this.events.filter(event => event.community_id === this.selectedCommunity) 
+        : this.events;
+      
+      // Then sort by date
+      return filtered.sort((a, b) => {
+        const dateA = new Date(a.created_at);
+        const dateB = new Date(b.created_at);
+        return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
+    }
+  },
+  methods: {
+    async fetchEvents() {
+      try {
+        const response = await axios.get('http://localhost:5004/api/events');
+        this.events = response.data.events;
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        this.error = 'Failed to load events. Please try again later.';
+      }
+    },
+    async fetchCommunities() {
+      try {
+        const response = await axios.get('http://localhost:5001/api/community');
+        this.communities = response.data.data.communities;
+      } catch (error) {
+        console.error('Error fetching communities:', error);
+        this.error = 'Failed to load communities. Please try again later.';
+      }
+    },
+    filterEvents() {
+      // The filtering happens automatically through the computed property
+    },
+    sortEvents(order) {
+      this.sortOrder = order;
+    },
+    async loadData() {
+      this.loading = true;
+      try {
+        await Promise.all([this.fetchEvents(), this.fetchCommunities()]);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        this.loading = false;
+      }
+    }
+  },
+  created() {
+    this.loadData();
+  }
+}
+</script>
+
+<style scoped>
+.events-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 2.5rem;
   margin-bottom: 15px;
+  color: #333;
 }
 
-hr {
-  margin: 30px 0;
-  border: 0;
-  border-top: 1px solid #eee;
+.welcome-message {
+  font-size: 1.1rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 30px;
 }
 
-/* Carousel Styles */
-.carousel-container {
-  margin: 40px 0;
+.filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }
 
-.carousel {
-  position: relative;
+.filter-section select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  margin-left: 10px;
+  font-size: 1rem;
+}
+
+.sort-section {
   display: flex;
   align-items: center;
-  margin: 20px 0;
 }
 
-.carousel-content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  height: 400px;
+.sort-section span {
+  margin-right: 10px;
+  color: #555;
 }
 
-.carousel-slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-.carousel-slide.active {
-  opacity: 1;
-}
-
-.carousel-control {
-  background: rgba(0, 0, 0, 0.3);
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 10;
-  border-radius: 50%;
-  margin: 0 10px;
-}
-
-.carousel-control:hover {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.carousel-indicators {
-  display: flex;
-  justify-content: center;
-  margin-top: 15px;
-}
-
-.indicator {
-  width: 12px;
-  height: 12px;
-  background: #ccc;
-  border-radius: 50%;
-  margin: 0 5px;
-  cursor: pointer;
-}
-
-.indicator.active {
-  background: #333;
-}
-
-/* Event Card Styles */
-.event-card {
-  display: flex;
-  background: #f8f8f8;
-  border-radius: 8px;
-  overflow: hidden;
-  height: 100%;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.event-image {
-  width: 40%;
-  object-fit: cover;
-}
-
-.event-details {
-  padding: 20px;
-  flex: 1;
-}
-
-.register-btn {
-  background: #4CAF50;
-  color: white;
-  border: none;
+.sort-btn {
   padding: 8px 16px;
+  margin-left: 5px;
   border-radius: 4px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.register-btn:hover {
-  background: #45a049;
-}
-
-/* Form Styles */
-.create-event {
-  margin-bottom: 50px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 10px;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.form-group input[type="number"] {
-  width: 200px;
-}
-
-.form-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px;
-  padding-right: 30px;
-}
-
-.submit-btn {
-  background: #2196F3;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 4px;
+  background-color: white;
   cursor: pointer;
+  transition: all 0.3s;
 }
 
-.submit-btn:hover {
-  background: #0b7dda;
+.sort-btn.active {
+  background-color: #333;
+  color: white;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .event-card {
-    flex-direction: column;
-  }
-  
-  .event-image {
-    width: 100%;
-    height: 200px;
-  }
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.no-events {
+  text-align: center;
+  padding: 50px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.loading {
+  text-align: center;
+  padding: 50px 0;
+  color: #666;
+}
+
+.create-event-container {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.create-event-btn {
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+  transition: background-color 0.3s;
+}
+
+.create-event-btn:hover {
+  background-color: #45a049;
 }
 </style>
