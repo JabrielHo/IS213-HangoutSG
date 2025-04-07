@@ -79,27 +79,37 @@ const fetchEventCount = async (communityId) => {
 const fetchCommunities = async () => {
   try {
     isLoading.value = true
-    const response = await fetch('http://localhost:8000/api/community')
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`)
+    
+    const communitiesResponse = await fetch('http://localhost:8000/api/community')
+    
+    if (!communitiesResponse.ok) {
+      throw new Error(`HTTP error! Status: ${communitiesResponse.status}`)
     }
-
-    const data = await response.json()
+    
+    const data = await communitiesResponse.json()
     const communitiesData = data.data.communities
-    // Fetch member counts and event counts for each community
-    const communitiesWithCounts = await Promise.all(
-      communitiesData.map(async (community) => {
-        const memberCount = await fetchMemberCount(community.community_id)
-        const eventCount = await fetchEventCount(community.community_id)
-        return {
-          ...community,
-          memberCount,
-          eventCount,
-        }
-      })
+    
+    const memberCountPromises = communitiesData.map(community => 
+      fetchMemberCount(community.community_id)
     )
-
+    
+    const eventCountPromises = communitiesData.map(community => 
+      fetchEventCount(community.community_id)
+    )
+    
+    // Wait for all promises to resolve
+    const [memberCounts, eventCounts] = await Promise.all([
+      Promise.all(memberCountPromises),
+      Promise.all(eventCountPromises)
+    ])
+    
+    // Combine the data
+    const communitiesWithCounts = communitiesData.map((community, index) => ({
+      ...community,
+      memberCount: memberCounts[index],
+      eventCount: eventCounts[index]
+    }))
+    
     communities.value = communitiesWithCounts
   } catch (err) {
     console.error('Error fetching communities:', err)

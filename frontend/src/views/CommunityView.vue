@@ -274,16 +274,25 @@ const updateRefreshRate = (seconds) => {
 
 const loadInitialData = async () => {
   isLoading.value = true
-  await fetchCommunityData()
-  await fetchPosts()
-
-  if (isAuthenticated.value) {
-    await checkMembershipStatus()
-  } else {
+  
+  try {
+    await fetchCommunityData()
+    
+    if (isAuthenticated.value) {
+      await Promise.all([
+        fetchPosts(),
+        checkMembershipStatus()
+      ])
+    } else {
+      await fetchPosts()
+    }
+    
+    startAutoRefresh()
+  } catch (err) {
+    console.error('Error loading initial data:', err)
+  } finally {
     isLoading.value = false
   }
-
-  startAutoRefresh()
 }
 
 watch(
