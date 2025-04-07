@@ -184,12 +184,18 @@ export default {
           user_id: this.currentUserId
         });
         
-        if (response.status === 200) {
+        // Check both status code and response data for success
+        if (response.data && response.data.success) {
           alert('Successfully registered for event!');
+        } else {
+          // The request was successful but the operation failed
+          alert(response.data.message || 'Registration unsuccessful. Please try again.');
         }
       } catch (error) {
         console.error('Error registering for event:', error);
-        alert('Failed to register for event. Please try again.');
+        // Extract error message from response if available
+        const errorMessage = error.response?.data?.message || 'Failed to register for event. Please try again.';
+        alert(errorMessage);
       } finally {
         // Clear processing state
         this.isProcessing = false;
