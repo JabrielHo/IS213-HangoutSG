@@ -32,15 +32,6 @@ services:
   - name: community_service
     url: http://community_service:5001
     routes:
-      - name: community_base_route
-        paths:
-          - /api/community
-        methods:
-          - GET
-          - POST
-        strip_path: false
-        preserve_host: true
-      
       - name: community_specific_route
         paths:
           - /api/community/\d+
@@ -51,7 +42,7 @@ services:
 
       - name: community_name_specific_route
         paths:
-          - /api/community/name/.*
+          - /api/community/name/
         methods:
           - GET
         strip_path: false
@@ -59,7 +50,362 @@ services:
         
       - name: community_creator_route
         paths:
-          - /api/community/creator/.*
+          - /api/community/creator/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+        
+      - name: community_base_route
+        paths:
+          - /api/community
+        methods:
+          - GET
+          - POST
+        strip_path: false
+        preserve_host: true
+
+  - name: post_service
+    url: http://post_service:5002
+    routes:
+      - name: post_status_route
+        paths:
+          - /api/post/\d+/status
+        methods:
+          - PUT
+        strip_path: false
+        preserve_host: true
+          
+      - name: post_specific_route
+        paths:
+          - /api/post/\d+
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+      
+      - name: posts_by_community_route
+        paths:
+          - /api/posts/community/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: posts_by_author_route
+        paths:
+          - /api/posts/author/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+        
+      - name: post_base_route
+        paths:
+          - /api/post
+        methods:
+          - GET
+          - POST
+        strip_path: false
+        preserve_host: true
+      
+      - name: posts_all_route
+        paths:
+          - /api/posts
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+
+  - name: comment_service
+    url: http://comment_service:5003
+    routes:
+      - name: comment_status_route
+        paths:
+          - /api/comment/\d+/status
+        methods:
+          - PUT
+        strip_path: false
+        preserve_host: true
+          
+      - name: comment_specific_route
+        paths:
+          - /api/comment/\d+
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: comments_by_post_route
+        paths:
+          - /api/comments/post/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: comments_by_author_route
+        paths:
+          - /api/comments/author/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: comment_base_route
+        paths:
+          - /api/comment
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: comments_all_route
+        paths:
+          - /api/comments
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+
+  - name: event_service
+    url: http://event_service:5004
+    routes:
+      - name: events_by_organizer_route
+        paths:
+          - /api/events/organizer/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: events_by_community_route
+        paths:
+          - /api/events/community/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: events_specific_get_route
+        paths:
+          - /api/events/\d+
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: events_get_all_route
+        paths:
+          - /api/events
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+
+  - name: event_registration_service
+    url: http://event_registration_service:5005
+    routes:
+      - name: registrations_by_event_route
+        paths:
+          - /api/registrations/event/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: registrations_check_route
+        paths:
+          - /api/registrations/check
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: registrations_by_user_route
+        paths:
+          - /api/registrations/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: registrations_base_route
+        paths:
+          - /api/registrations
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+
+  - name: inbox_service
+    url: http://inbox_service:5006
+    routes:
+      - name: inbox_create_route
+        paths:
+          - /api/inbox/create
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: inbox_read_route
+        paths:
+          - /api/inbox/read/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: inbox_delete_route
+        paths:
+          - /api/inbox/delete/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: inbox_by_user_route
+        paths:
+          - /api/inbox/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+
+  - name: content_moderation_service
+    url: http://content_moderation_service:5007
+    routes:
+      - name: moderation_delete_flag_route
+        paths:
+          - /api/moderation/delete/flag/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: moderation_delete_post_route
+        paths:
+          - /api/moderation/delete/post/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: moderation_delete_comment_route
+        paths:
+          - /api/moderation/report/delete/comment/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: moderation_report_post_route
+        paths:
+          - /api/moderation/report/post/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: moderation_report_comment_route
+        paths:
+          - /api/moderation/report/comment/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: moderation_get_by_flag_id_route
+        paths:
+          - /api/moderation/get/
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+          
+      - name: moderation_get_all_route
+        paths:
+          - /api/moderation/get
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: true
+
+  - name: email_service
+    url: http://email_service:5008
+    routes:
+      - name: email_route
+        paths:
+          - /api/email
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+
+  - name: manage_event_service
+    url: http://manage_event_service:5009
+    routes:
+      - name: manage_events_specific_route
+        paths:
+          - /api/events/\d+
+        methods:
+          - DELETE
+        strip_path: false
+        preserve_host: true
+          
+      - name: manage_events_base_route
+        paths:
+          - /api/events
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+
+  - name: register_for_event_service
+    url: http://register_for_event_service:5010
+    routes:
+      - name: register_internal_route
+        paths:
+          - /api/register_internal
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: register_route
+        paths:
+          - /api/register
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+
+  - name: ban_content_service
+    url: http://ban_content_service:5011
+    routes:
+      - name: ban_content_route
+        paths:
+          - /api/ban/content
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+
+  - name: user_service
+    url: http://user_service:5000
+    routes:
+      - name: users_ban_route
+        paths:
+          - /api/users/ban/
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: true
+          
+      - name: users_specific_route
+        paths:
+          - /api/users/
         methods:
           - GET
         strip_path: false
