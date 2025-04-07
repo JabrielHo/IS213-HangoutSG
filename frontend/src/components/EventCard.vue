@@ -15,9 +15,9 @@
       <!-- Show registered text if user is registered -->
       <span v-if="isRegistered" class="registered-text">Registered</span>
       
-      <!-- Show register button only if user is not the organizer and not registered -->
+      <!-- Show register button only if userId is not null, user is not the organizer, and not registered -->
       <button 
-        v-if="userId !== event.organizer_id && !isRegistered" 
+        v-if="userId !== null && userId !== event.organizer_id && !isRegistered" 
         @click="$emit('register-event', event.event_id)" 
         class="register-btn"
       >
