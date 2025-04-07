@@ -33,8 +33,6 @@
 </template>
   
 <script setup>
-import { defineEmits } from 'vue';
-
 const props = defineProps({
   // Individual comment object
   comment: {

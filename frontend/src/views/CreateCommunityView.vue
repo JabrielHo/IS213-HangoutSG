@@ -55,8 +55,6 @@ const submitForm = async () => {
 
         if (!joinResponse.ok) {
           console.error('Failed to join the community automatically')
-        } else {
-          console.log('Successfully joined the newly created community')
         }
       } catch (joinError) {
         console.error('Error joining community:', joinError)

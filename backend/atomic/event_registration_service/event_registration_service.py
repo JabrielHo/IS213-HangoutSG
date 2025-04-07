@@ -64,11 +64,8 @@ def get_user_events(user_id):
     try:
         registrations = EventRegistration.query.filter_by(user_id=user_id).all()
 
-        if not registrations:
-            return jsonify({"message": "No events found for this user"}), 404
-
         events = [reg.json() for reg in registrations]
-
+        
         return jsonify({"events": events}), 200
 
     except Exception as e:

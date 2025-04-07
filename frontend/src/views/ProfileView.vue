@@ -1,9 +1,11 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 import { useRouter } from 'vue-router'
 import CommunityPost from '../components/CommunityPost.vue'
-import CommunityCard from '@/components/CommunityCard.vue'
+import CommunityCard from '../components/CommunityCard.vue'
+import CommentsPost from '../components/CommentsPost.vue'
+import ProfileEventCard from '../components/ProfileEventCard.vue'
 
 const router = useRouter()
 const { user, isAuthenticated, isLoading: authLoading } = useAuth0()
@@ -11,7 +13,20 @@ const currentTab = ref('community')
 const communities = ref([])
 const posts = ref([])
 const comments = ref([])
-const isLoading = ref(false)
+const hostedEvents = ref([])
+const joinedEvents = ref([])
+
+const loadingStates = ref({
+  communities: false,
+  posts: false,
+  comments: false,
+  hostedEvents: false,
+  joinedEvents: false,
+})
+
+const isLoading = computed(() => {
+  return Object.values(loadingStates.value).some((state) => state === true)
+})
 
 const tabs = [
   { id: 'community', name: 'Communities' },
@@ -56,7 +71,6 @@ watch(user, (newValue) => {
 })
 
 onMounted(() => {
-  // If already authenticated, load data right away
   if (isAuthenticated.value && user.value && !authLoading.value) {
     loadUserData()
   }
@@ -64,7 +78,7 @@ onMounted(() => {
 
 const fetchUserCommunities = async () => {
   try {
-    isLoading.value = true
+    loadingStates.value.communities = true
 
     const creatorId = user.value.sub
 
@@ -84,16 +98,16 @@ const fetchUserCommunities = async () => {
   } catch (err) {
     console.error('Error fetching communities:', err)
   } finally {
-    isLoading.value = false
+    loadingStates.value.communities = false
   }
 }
 
 const fetchUserPosts = async () => {
   try {
-    isLoading.value = true
+    loadingStates.value.posts = true
     const creatorId = user.value.sub
 
-    // Step 1: Fetch posts and immediately display them
+    // Step 1: Fetch posts
     const response = await fetch(`http://localhost:5002/api/posts/author/${creatorId}`)
 
     if (!response.ok) {
@@ -107,9 +121,8 @@ const fetchUserPosts = async () => {
       commentCount: 0,
     }))
 
-    // Update UI immediately with basic post data
-    posts.value = postsWithUserInfo
-    isLoading.value = false
+    // Keep posts empty until all data is fetched - don't update UI yet
+    // REMOVE: posts.value = postsWithUserInfo
 
     // Then fetch additional data in parallel
     const uniqueAuthorIds = [...new Set(postsWithUserInfo.map((post) => post.author_id))]
@@ -121,8 +134,8 @@ const fetchUserPosts = async () => {
       fetchCommentCounts(postIds),
     ])
 
-    // Update posts with additional data
-    posts.value = posts.value.map((post) => {
+    // Update posts with complete data only once
+    posts.value = postsWithUserInfo.map((post) => {
       const userData = userDataMap[post.author_id]
       return {
         ...post,
@@ -132,6 +145,8 @@ const fetchUserPosts = async () => {
     })
   } catch (err) {
     console.error('Error fetching posts:', err)
+  } finally {
+    loadingStates.value.posts = false
   }
 }
 
@@ -174,15 +189,126 @@ const fetchCommentCounts = async (postIds) => {
 }
 
 const fetchUserComments = async () => {
-  comments.value = []
+  try {
+    loadingStates.value.comments = true
+    const authorId = user.value.sub
+
+    const response = await fetch(`http://localhost:5003/api/comments/author/${authorId}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.code === 200 && data.data && data.data.comments) {
+      // Get basic comments data
+      const userComments = data.data.comments.map((comment) => ({
+        ...comment,
+        username: 'Loading...',
+      }))
+
+      // Get unique author IDs to fetch usernames
+      const uniqueAuthorIds = [...new Set(userComments.map((comment) => comment.author_id))]
+
+      // Fetch user data for comments
+      const userDataMap = await fetchUserData(uniqueAuthorIds)
+
+      // Update comments with complete data only once
+      comments.value = userComments.map((comment) => {
+        const userData = userDataMap[comment.author_id]
+        return {
+          ...comment,
+          username: userData ? userData.username : 'Unknown User',
+        }
+      })
+    } else {
+      console.error('Error fetching comments:', data.message)
+      comments.value = []
+    }
+  } catch (err) {
+    console.error('Error fetching comments:', err)
+    comments.value = []
+  } finally {
+    loadingStates.value.comments = false
+  }
 }
 
 const fetchHostedEvents = async () => {
-  comments.value = []
+  try {
+    loadingStates.value.hostedEvents = true
+    const organizerId = user.value.sub
+
+    const response = await fetch(`http://localhost:5004/api/events/organizer/${organizerId}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (data) {
+      hostedEvents.value = data.events
+    } else {
+      console.error('Error fetching hosted events:', data.message)
+      hostedEvents.value = []
+    }
+  } catch (err) {
+    console.error('Error fetching hosted events:', err)
+    hostedEvents.value = []
+  } finally {
+    loadingStates.value.hostedEvents = false
+  }
 }
 
 const fetchJoinedEvents = async () => {
-  comments.value = []
+  try {
+    loadingStates.value.joinedEvents = true
+    const userId = user.value.sub
+
+    const response = await fetch(`http://localhost:5005/api/registrations/${userId}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data && data.events && data.events.length > 0) {
+      // Get all event details before updating the UI
+      const eventDetailsPromises = data.events.map(async (registration) => {
+        try {
+          const eventResponse = await fetch(
+            `http://localhost:5004/api/events/${registration.event_id}`
+          )
+          if (eventResponse.ok) {
+            const eventData = await eventResponse.json()
+            return {
+              ...eventData,
+              registration_id: registration.registration_id,
+              registered_at: registration.registered_at,
+            }
+          } else {
+            console.error(`Failed to fetch event ${registration.event_id}: ${eventResponse.status}`)
+            return null
+          }
+        } catch (err) {
+          console.error(`Error fetching details for event ${registration.event_id}:`, err)
+          return null
+        }
+      })
+
+      // Only update UI once with complete data
+      const eventDetails = await Promise.all(eventDetailsPromises)
+      joinedEvents.value = eventDetails.filter((event) => event !== null)
+    } else {
+      joinedEvents.value = []
+    }
+  } catch (err) {
+    console.error('Error fetching joined events:', err)
+    joinedEvents.value = []
+  } finally {
+    loadingStates.value.joinedEvents = false
+  }
 }
 </script>
 
@@ -209,7 +335,8 @@ const fetchJoinedEvents = async () => {
           v-for="tab in tabs"
           :key="tab.id"
           @click="currentTab = tab.id"
-          :class="{ active: currentTab === tab.id }"
+          :class="{ active: currentTab === tab.id, disabled: isLoading }"
+          :disabled="isLoading"
         >
           {{ tab.name }}
         </button>
@@ -219,7 +346,7 @@ const fetchJoinedEvents = async () => {
         <!-- Community Tab -->
         <div v-if="currentTab === 'community'" class="tab-panel">
           <h3>My Created Communities</h3>
-          <div v-if="isLoading" class="text-center my-5">
+          <div v-if="loadingStates.communities" class="text-center my-5">
             <div class="spinner-border" role="status"></div>
             <p class="mt-2 text-muted">Loading Communities...</p>
           </div>
@@ -240,7 +367,7 @@ const fetchJoinedEvents = async () => {
         <!-- Posts Tab -->
         <div v-if="currentTab === 'posts'" class="tab-panel">
           <h3>My Posts</h3>
-          <div v-if="isLoading" class="text-center my-5">
+          <div v-if="loadingStates.posts" class="text-center my-5">
             <div class="spinner-border" role="status"></div>
             <p class="mt-2 text-muted">Loading Posts...</p>
           </div>
@@ -260,32 +387,52 @@ const fetchJoinedEvents = async () => {
         <!-- Comments Tab -->
         <div v-if="currentTab === 'comments'" class="tab-panel">
           <h3>My Comments</h3>
-          <div v-if="comments.length === 0" class="empty-state">
+          <div v-if="loadingStates.comments" class="text-center my-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-muted">Loading Comments...</p>
+          </div>
+          <div v-else-if="comments.length === 0" class="empty-state">
             You haven't made any comments yet.
           </div>
-          <div v-else class="comments-list">
-            <div v-for="comment in comments" :key="comment.id">
-              <p>{{ comment.content }}</p>
-            </div>
+          <div v-else class="list-group">
+            <CommentsPost
+              v-for="comment in comments"
+              :key="comment.comment_id"
+              :comment="comment"
+              @click="goToPost(comment.post_id)"
+              class="comment-item"
+            />
           </div>
         </div>
 
         <!-- Created Events Tab -->
         <div v-if="currentTab === 'hostedevents'" class="tab-panel">
           <h3>My Hosted Events</h3>
-          <div v-if="comments.length === 0" class="empty-state">
+          <div v-if="loadingStates.hostedEvents" class="text-center my-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-muted">Loading Hosted Events...</p>
+          </div>
+          <div v-else-if="hostedEvents.length === 0" class="empty-state">
             You haven't created any events yet.
           </div>
-          <div v-else></div>
+          <div v-else class="events-grid">
+            <ProfileEventCard v-for="event in hostedEvents" :key="event.event_id" :event="event" />
+          </div>
         </div>
 
         <!-- Joined Events Tab -->
         <div v-if="currentTab === 'joinedevents'" class="tab-panel">
           <h3>My Joined Events</h3>
-          <div v-if="comments.length === 0" class="empty-state">
+          <div v-if="loadingStates.joinedEvents" class="text-center my-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-muted">Loading Joined Events...</p>
+          </div>
+          <div v-else-if="joinedEvents.length === 0" class="empty-state">
             You haven't joined any events yet.
           </div>
-          <div v-else></div>
+          <div v-else class="events-grid">
+            <ProfileEventCard v-for="event in joinedEvents" :key="event.event_id" :event="event" />
+          </div>
         </div>
       </div>
     </div>
@@ -293,6 +440,20 @@ const fetchJoinedEvents = async () => {
 </template>
 
 <style scoped>
+.tabs button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.comment-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.comment-item:hover {
+  background-color: #f5f5f5;
+}
+
 .profile-header {
   display: flex;
   align-items: center;
@@ -391,16 +552,16 @@ const fetchJoinedEvents = async () => {
     align-items: center;
     text-align: center;
   }
-  
+
   .profile-info {
     margin-left: 0;
     margin-top: 15px;
   }
-  
+
   .tabs {
     justify-content: center;
   }
-  
+
   .tabs button {
     padding: 8px 15px;
     font-size: 14px;
@@ -408,7 +569,7 @@ const fetchJoinedEvents = async () => {
     text-align: center;
     min-width: 100px;
   }
-  
+
   .communities-grid {
     grid-template-columns: 1fr;
   }
@@ -420,10 +581,16 @@ const fetchJoinedEvents = async () => {
     font-size: 13px;
     min-width: auto;
   }
-  
+
   .profile-avatar img {
     width: 80px;
     height: 80px;
   }
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 </style>

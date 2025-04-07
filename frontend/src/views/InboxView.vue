@@ -61,7 +61,6 @@ const fetchMessages = async () => {
     const data = await res.json()
     messages.value = data
     messagesLoaded.value = true
-    console.log('Messages loaded:', data)
   } catch (err) {
     console.error('Failed to fetch messages:', err)
   }
@@ -88,7 +87,6 @@ const deleteMessage = async (messageId) => {
       throw new Error(`HTTP error! Status: ${res.status}`)
     }
 
-    console.log(`Message ${messageId} deleted successfully`)
   } catch (err) {
     console.error('Failed to delete message:', err)
 
@@ -106,14 +104,12 @@ const setupSocketConnection = () => {
   socket.value = io('http://localhost:5006')
   socket.value.on('connect', () => {
     isConnected.value = true
-    console.log('Socket connected')
   })
 
   socket.value.on('new_message', (message) => {
     // Only add the message if it's intended for the current user
     if (message.receiver_id === user.value.sub) {
       messages.value.unshift(message) // Add new messages to the top
-      console.log('New message received:', message)
     }
   })
 
@@ -129,13 +125,11 @@ const setupSocketConnection = () => {
         // Otherwise update its status
         messages.value[index].status = status
       }
-      console.log(`Message ${message_id} status updated to ${status}`)
     }
   })
 
   socket.value.on('disconnect', () => {
     isConnected.value = false
-    console.log('Socket disconnected')
   })
 }
 
@@ -165,7 +159,6 @@ const markAsRead = async (messageId) => {
       throw new Error(`HTTP error! Status: ${res.status}`)
     }
 
-    console.log(`Message ${messageId} marked as read`)
     return true
   } catch (err) {
     console.error('Failed to mark as read:', err)
@@ -204,7 +197,6 @@ watch(
   [isAuthenticated, isLoading, user],
   ([newIsAuthenticated, newIsLoading, newUser]) => {
     if (newIsAuthenticated && !newIsLoading && newUser?.sub) {
-      console.log('Auth state ready, fetching messages')
       fetchMessages()
       setupSocketConnection()
     }
@@ -216,7 +208,6 @@ onUnmounted(() => {
   if (socket.value) {
     socket.value.removeAllListeners();
     socket.value.close();
-    console.log('Socket closed on unmount');
   }
 })
 </script>
