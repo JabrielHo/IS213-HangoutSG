@@ -32,23 +32,30 @@ class EventsServiceClient:
         response = requests.delete(f"{self.base_url}/api/events/{event_id}")
         return response.json(), response.status_code
     
-    def validate_location(postal_code):
+    def validate_location(self, postal_code): 
+        """Validates location and returns formatted address or error"""
         url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={postal_code}&returnGeom=Y&getAddrDetails=Y"
         
-        response = requests.get(url)
-        
-        if response.status_code != 200:
-            return response.json(), response.status_code
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Ensure status code is 200
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}, 500  # Return 500 if there was an issue with the request
 
         data = response.json()
         
         if data.get("found", 0) == 0:
-            return {"error": "Bad address"}, response.status_code  
-        
-        first_result = data["results"][0]
-        address = f"{first_result['BLK_NO']} {first_result['ROAD_NAME']}, Singapore {first_result['POSTAL']}"
-        
-        return address
+            return {"error": "Bad address"}, 400  # Return 400 for a bad address
+
+        # Loop through the results to check if any postal code matches
+        for result in data["results"]:
+            if result.get("POSTAL") == postal_code:
+                address = f"{result['BLK_NO']} {result['ROAD_NAME']}, Singapore {result['POSTAL']}"
+                return address  # Return address if postal code matches
+
+        # If no match is found, return error
+        return {"error": "Postal code not found in results"}, 404
+
     
     def publish_to_inbox(message):
         try:
@@ -92,14 +99,18 @@ def create_event():
         if field not in event_data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
         
-    #get details
+    # Get event details
     subject = event_data["title"]
     content = event_data["description"]
     community_id = event_data["community_id"]
     postal_code = event_data["location"]
 
-    #validate location
-    event_data["location"] = events_client.validate_location(postal_code)
+    # Validate location
+    location = events_client.validate_location(postal_code)
+    if isinstance(location, dict) and location.get("error"):  # Error in location validation
+        return jsonify(location), 400
+    
+    event_data["location"] = location
     
     # get user_ID from community
     response = requests.get(OUTSYSTEM_URL + community_id)
