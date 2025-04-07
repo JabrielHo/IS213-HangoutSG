@@ -14,7 +14,7 @@ CORS(app)
 
 # Configuration
 EVENTS_SERVICE_URL = os.getenv("EVENTS_SERVICE_URL", "http://localhost:5004")
-OUTSYSTEM_URL = f"https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/membersbycommunity/"
+REGISTRATION_URL = f"http://localhost:5005/api/registrations/event/"
 
 class EventsServiceClient:
     """Client for interacting with the atomic events microservice"""
@@ -150,20 +150,18 @@ def delete_event(event_id):
     event = event_response.json()
     subject = event["title"]
     content = event["description"]
-    community_id = event["community_id"]
 
     
-    # get user_ID from community
-    response = requests.get(OUTSYSTEM_URL + community_id)
+    # get user_ID from event_registration
+    user_id = []
+    response = requests.get(REGISTRATION_URL + event_id)
 
-    # Check if request was successful
     if response.status_code == 200:
         data = response.json()
-
-        # Extract user IDs
-        user_id = [member["user_id"] for member in data.get("CommunityMemberAPI", [])]
+        user_id = [registration["user_id"] for registration in data.get("registrations", [])]
     else:
-        return jsonify(response.text), response.status_code
+        return jsonify({"error": f"Request failed with status {response.status_code}", "message": response.text})
+
 
     # Publish notification message to inbox
     inbox_message = {
