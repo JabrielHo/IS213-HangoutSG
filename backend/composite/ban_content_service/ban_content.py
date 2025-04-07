@@ -149,9 +149,8 @@ def ban_content():
         response = requests.post(f"http://localhost:5000/api/users/ban/{author_id}",json={"reason": "Inappropriate content reported"})
 
         # Remove from moderation records
-        mod_delete_url = f"{CONTENT_MODERATION_URL}/delete/{content_type}/{content_id}"
+        mod_delete_url = f"{CONTENT_MODERATION_URL}/delete/flag/{flag_id}"
         mod_delete_response = requests.post(mod_delete_url)
-
         if mod_delete_response.status_code != 200:
             return jsonify({"code": 500, "message": "Failed to delete moderation record"}), 500
 

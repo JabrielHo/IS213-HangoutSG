@@ -55,41 +55,44 @@ const formatTimeAgo = (timestamp) => {
 
 const reportPost = (post, event) => {
   event.preventDefault();
-  // Simple confirmation for reporting
-  if (confirm('Are you sure you want to report this post?')) {
-    
-    const data = {
-      poster_id: post.author_id,
-      user_id: user._rawValue.sub,
-      post_id: post.post_id, 
-      content: post.content,
-      reason: 'No reason provided'
-    };
-    
-    fetch('http://localhost:5007/api/moderation/report/post/'+post.post_id, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', // Ensure the request body is sent as JSON
-      },
-      body: JSON.stringify(data), // Convert the data object to JSON string
-    })
-      .then(response => {
-        if (response.ok) {
-          // If the response status is 200-299
-          return response.json(); // Parse the JSON response
-        } else {
-          throw new Error('Failed to report the post.');
-        }
-      })
-      .then(data => {
-        // Handle success (response data)
-        alert('Post reported. Thank you for helping keep the community safe.');
-      })
-      .catch(error => {
-        console.error('Error while reporting the post:', error);
-        alert('There was an error while reporting the post.');
-      });
+  
+  // Prompt user to input a reason for reporting the post
+  const reason = prompt('Please provide a reason for reporting this post:');
+  
+  if (!reason) {
+    alert('You must provide a reason to report the post.');
+    return;
   }
+
+  const data = {
+    poster_id: post.author_id,
+    user_id: user._rawValue.sub,
+    post_id: post.post_id, 
+    content: post.content,
+    reason: reason === 'Other' ? prompt('Please specify the reason:') : reason
+  };
+  
+  fetch('http://localhost:5007/api/moderation/report/post/' + post.post_id, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error('Failed to report the post.');
+      }
+    })
+    .then(data => {
+      alert('Post reported. Thank you for helping keep the community safe.');
+    })
+    .catch(error => {
+      console.error('Error while reporting the post:', error);
+      alert('There was an error while reporting the post.');
+    });
 }
 </script>
 

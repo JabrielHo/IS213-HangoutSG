@@ -304,41 +304,45 @@ export default {
         this.isSubmitting = false
       }
     },
-  async reportPost(comment, event) {
-    event.preventDefault();  // Prevent the default action of the event
+async reportPost(comment, event) {
+  event.preventDefault();  // Prevent the default action of the event
 
-    // Simple confirmation for reporting
-    const confirmed = confirm('Are you sure you want to report this Comment?');
-    if (!confirmed) return;
+  // Prompt user to input a reason for reporting the comment
+  const reason = prompt('Please provide a reason for reporting this comment:');
+  
+  if (!reason) {
+    alert('You must provide a reason to report the comment.');
+    return;
+  }
 
-    try {
-      const response = await fetch('http://localhost:5007/api/moderation/report/comment/' + comment.comment_id, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          poster_id: comment.author_id, 
-          user_id: this.currentUser,   
-          comment_id: comment.comment_id, 
-          content:comment.content,
-          reason: 'No reason provided'
-        }), 
-      });
+  try {
+    const response = await fetch('http://localhost:5007/api/moderation/report/comment/' + comment.comment_id, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        poster_id: comment.author_id, 
+        user_id: this.currentUser.id,   
+        comment_id: comment.comment_id, 
+        content: comment.content,
+        reason: reason
+      }), 
+    });
 
-      if (response.ok) {
-        // If the response status is 200-299
-        const responseData = await response.json(); // Parse the JSON response
-        alert('Comment reported. Thank you for helping keep the community safe.');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to report the comment.');
-      }
-    } catch (error) {
-      console.error('Error while reporting the comment:', error);
-      alert('There was an error while reporting the comment.');
+    if (response.ok) {
+      // If the response status is 200-299
+      const responseData = await response.json(); // Parse the JSON response
+      alert('Comment reported. Thank you for helping keep the community safe.');
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to report the comment.');
     }
-  },
+  } catch (error) {
+    console.error('Error while reporting the comment:', error);
+    alert('There was an error while reporting the comment.');
+  }
+},
   },
   mounted() {
     this.fetchComments()

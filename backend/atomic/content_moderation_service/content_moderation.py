@@ -34,7 +34,7 @@ def report_post(post_id):
         sia = SentimentIntensityAnalyzer()
         sentiment_score = sia.polarity_scores(post_content)
         isInappropriate = False
-        if sentiment_score['compound'] <= -0.5: 
+        if sentiment_score['compound'] <= -0.2: 
             isInappropriate = True  
         
 
@@ -81,7 +81,7 @@ def report_comment(comment_id):
         sia = SentimentIntensityAnalyzer()
         sentiment_score = sia.polarity_scores(comment_content)
         isInappropriate = False
-        if sentiment_score['compound'] <= -0.5: 
+        if sentiment_score['compound'] <= -0.2: 
             isInappropriate = True  
         
 

@@ -1,34 +1,30 @@
 <template>
   <div class="report-card">
-    <!-- Only wrap content that should trigger navigation -->
-    <router-link :to="{ name: 'report-details', params: { reportId: content.flag_id } }">
-      <div class="card-header">
-        <span class="report-type">
-          {{ content.post_id ? '📮 Post' : '💬 Comment' }}
-        </span>
-        
-      </div>
+    <div class="card-header">
+      <span class="report-type">
+        {{ content.post_id ? '📮 Post' : '💬 Comment' }}
+      </span>
+    </div>
 
-      <div class="card-content">
-        <p class="reported-content">{{ getContentPreview }}</p>
-        <div class="report-meta">
-          <div class="meta-item">
-            <span class="meta-label">Reported by:</span>
-            <span class="meta-value">@{{ content.flagged_by }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Reason:</span>
-            <span class="meta-value">{{ content.reason }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Reported on:</span>
-            <span class="meta-value">{{ formattedDate }}</span>
-          </div>
+    <div class="card-content">
+      <p class="reported-content">{{ getContentPreview }}</p>
+      <div class="report-meta">
+        <div class="meta-item">
+          <span class="meta-label">Reported by:</span>
+          <span class="meta-value">@{{ content.flagged_by }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Reason:</span>
+          <span class="meta-value">{{ content.reason }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Reported on:</span>
+          <span class="meta-value">{{ formattedDate }}</span>
         </div>
       </div>
-    </router-link>
+    </div>
 
-    <!-- Buttons outside of the router-link to trigger their actions -->
+    <!-- Action buttons outside the content -->
     <div class="card-actions">
       <button 
         class="action-btn ban-btn"
@@ -55,8 +51,8 @@ const props = defineProps({
     required: true
   }
 })
-const getContentPreview = ref('Loading...')  // Initially set to "Loading..."
 
+const getContentPreview = ref('Loading...')  // Initially set to "Loading..."
 
 const formattedDate = computed(() => {
   return new Date(props.content.created_at).toLocaleDateString('en-SG', {
@@ -67,7 +63,6 @@ const formattedDate = computed(() => {
     minute: '2-digit'
   })
 })
-
 
 const fetchContent = async () => {
   try {
@@ -100,9 +95,8 @@ const fetchContent = async () => {
 onMounted(() => {
   fetchContent();
 });
-
-
 </script>
+
 
 <style scoped>
 .report-card {
@@ -111,12 +105,6 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.2s ease;
-  text-decoration: none; /* Remove underline from the router-link */
-}
-
-.report-card a {
-  text-decoration: none;
-  color: inherit; /* optional: preserve intended color styling */
 }
 
 .report-card:hover {
@@ -166,12 +154,9 @@ onMounted(() => {
   color: #4a4a4a;
   margin-bottom: 1rem;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
+  white-space: normal;  /* Allow text to wrap naturally */
+  overflow: visible;    /* Ensure no overflow clipping */
+  text-overflow: clip;  /* Ensure no ellipsis at the end */
 }
 
 .report-meta {
