@@ -110,7 +110,7 @@ def create_event():
 def delete_event(event_id):
     """Composite endpoint to delete an event"""
     # Step 1: Check event details and capacity
-    event_response = requests.get(f"{EVENTS_SERVICE_URL}/events/{event_id}")
+    event_response = requests.get(f"{EVENTS_SERVICE_URL}/api/events/{event_id}")
     if event_response.status_code != 200:
         return jsonify({"error": "Event not found"}), 404
 
