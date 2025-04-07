@@ -71,7 +71,9 @@
 <script>
 import axios from 'axios';
 import EventCard from '@/components/EventCard.vue';
-import { useAuth0 } from '@auth0/auth0-vue'
+import { useAuth0 } from '@auth0/auth0-vue';
+import { useRoute } from 'vue-router'
+
 
 export default {
   name: 'EventsView',
@@ -80,8 +82,9 @@ export default {
   },
   setup() {
     const { user, isAuthenticated } = useAuth0()
+    const route = useRoute()
 
-    return {user, isAuthenticated}
+    return { user, isAuthenticated, route }
   },
   data() {
     return {
@@ -93,7 +96,9 @@ export default {
       sortOrder: 'newest',
       isProcessing: false,
       loadingMessage: '',
-      processingEventId: null
+      processingEventId: null,
+      communityNameFromUrl: null,
+
     };
   },
   computed: {
@@ -128,6 +133,16 @@ export default {
       try {
         const response = await axios.get('http://localhost:5001/api/community');
         this.communities = response.data.data.communities;
+
+        if (this.communityNameFromUrl && this.communities.length > 0) {
+          const matchingCommunity = this.communities.find(
+            (community) => community.name === this.communityNameFromUrl,
+          )
+
+          if (matchingCommunity) {
+            this.selectedCommunity = matchingCommunity.community_id
+          }
+        }
       } catch (error) {
         console.error('Error fetching communities:', error);
         this.error = 'Failed to load communities. Please try again later.';
@@ -141,6 +156,9 @@ export default {
     },
     async loadData() {
       this.loading = true;
+      if (this.route.params.community) {
+        this.communityNameFromUrl = this.route.params.community
+      }
       try {
         await Promise.all([this.fetchEvents(), this.fetchCommunities()]);
       } catch (error) {
@@ -158,6 +176,7 @@ export default {
       this.processingEventId = eventId;
       
       try {
+        await Promise.all([this.fetchEvents(), this.fetchCommunities()])
         const response = await axios.post('http://127.0.0.1:5010/api/register', {
           event_id: eventId,
           user_id: this.currentUserId
