@@ -16,7 +16,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 db.init_app(app)
 
 
-@app.route("/events", methods=["POST"])
+@app.route("/api/events", methods=["POST"])
 def create_event():
     data = request.json
     new_event = Event(
@@ -40,7 +40,7 @@ def create_event():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/events/<event_id>", methods=["DELETE"])
+@app.route("/api/events/<event_id>", methods=["DELETE"])
 def soft_delete_event(event_id):
     try:
         event = db.session.get(Event, event_id)
@@ -55,7 +55,7 @@ def soft_delete_event(event_id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/events", methods=["GET"])
+@app.route("/api/events", methods=["GET"])
 def get_events():
     try:
         events = Event.query.filter_by(is_deleted=False).all()
@@ -80,7 +80,7 @@ def get_events():
 
 
 # get all events by organizer_id
-@app.route("/events/organizer/<organizer_id>", methods=["GET"])
+@app.route("/api/events/organizer/<organizer_id>", methods=["GET"])
 def get_events_by_organizer(organizer_id):
     try:
         events = Event.query.filter_by(
@@ -106,7 +106,7 @@ def get_events_by_organizer(organizer_id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/events/<event_id>", methods=["GET"])
+@app.route("/api/events/<event_id>", methods=["GET"])
 def get_event(event_id):
     """Get event information by event ID"""
     try:
@@ -131,7 +131,7 @@ def get_event(event_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-@app.route("/events/community/<community_id>", methods=["GET"])
+@app.route("/api/events/community/<community_id>", methods=["GET"])
 def get_events_by_community(community_id):
     """Get all events by community ID"""
     try:
