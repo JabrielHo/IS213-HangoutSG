@@ -61,11 +61,17 @@
 <script>
 import axios from 'axios';
 import EventCard from '@/components/EventCard.vue';
+import { useAuth0 } from '@auth0/auth0-vue'
 
 export default {
   name: 'EventsView',
   components: {
     EventCard
+  },
+  setup() {
+    const { user, isAuthenticated } = useAuth0()
+
+    return {user, isAuthenticated}
   },
   data() {
     return {
@@ -75,10 +81,12 @@ export default {
       loading: true,
       error: null,
       sortOrder: 'newest',
-      currentUserId: 'auth0|67cd8623469fee2d24e73bfb' // This would typically come from auth service
     };
   },
   computed: {
+    currentUserId() {
+      return this.isAuthenticated && this.user ? this.user.sub : null
+    },
     filteredEvents() {
       // First filter by community if one is selected
       let filtered = this.selectedCommunity 
