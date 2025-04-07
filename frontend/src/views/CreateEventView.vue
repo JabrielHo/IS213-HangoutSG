@@ -26,13 +26,13 @@
       </div>
       
       <div class="form-group">
-        <label for="location">Location</label>
+        <label for="location">Postal Code</label>
         <input 
           type="text" 
           id="location" 
           v-model="event.location" 
           required
-          placeholder="Where will the event be held?"
+          placeholder="Postal Code of Event Venue"
         >
       </div>
       
@@ -155,7 +155,7 @@ export default {
         }
       } catch (error) {
         console.error('Error creating event:', error);
-        this.error = 'Failed to create event. Please try again later.';
+        this.error = 'Failed to create event. Check your fields again';
         alert(this.error);
       } finally {
         this.loading = false;
