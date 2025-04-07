@@ -11,17 +11,17 @@ CORS(app)
 load_dotenv()
 
 # Service URLs
-EVENT_SERVICE_URL = os.environ.get("EVENT_SERVICE_URL", "http://localhost:5004")
-EVENT_REGISTRATION_SERVICE_URL = os.environ.get(
+EVENT_SERVICE_URL = os.getenv("EVENT_SERVICE_URL", "http://localhost:5004")
+EVENT_REGISTRATION_SERVICE_URL = os.getenv(
     "EVENT_REGISTRATION_SERVICE_URL", "http://localhost:5005"
 )
 
 # RabbitMQ configuration
-RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "localhost")
-RABBITMQ_PORT = int(os.environ.get("RABBITMQ_PORT", 5672))
-EXCHANGE_NAME = os.environ.get("EXCHANGE_NAME", "hangout_exchange")
-INBOX_ROUTING_KEY = os.environ.get("ROUTING_KEY", "inbox_message")
-REGISTRATION_ROUTING_KEY = os.environ.get(
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+EXCHANGE_NAME = os.getenv("EXCHANGE_NAME", "hangout_exchange")
+INBOX_ROUTING_KEY = os.getenv("ROUTING_KEY", "inbox_message")
+REGISTRATION_ROUTING_KEY = os.getenv(
     "REGISTRATION_ROUTING_KEY", "event_registration"
 )
 
@@ -230,4 +230,4 @@ def process_registration():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5010)
+    app.run(host="0.0.0.0", port=5010)

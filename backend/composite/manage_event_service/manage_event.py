@@ -31,10 +31,10 @@ class EventsServiceClient:
     
     def publish_to_inbox(message):
         try:
-            amqp_host = os.environ.get("RABBITMQ_HOST", "localhost")
-            amqp_port = int(os.environ.get("RABBITMQ_PORT", 5672))
-            exchange_name = os.environ.get("EXCHANGE_NAME", "hangout_exchange")
-            routing_key = os.environ.get("ROUTING_KEY", "inbox_message")
+            amqp_host = os.getenv("RABBITMQ_HOST", "localhost")
+            amqp_port = os.getenv("RABBITMQ_PORT", 5672)
+            exchange_name = os.getenv("EXCHANGE_NAME", "hangout_exchange")
+            routing_key = os.getenv("ROUTING_KEY", "inbox_message")
 
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(host=amqp_host, port=amqp_port)
@@ -151,6 +151,4 @@ def handle_exception(e):
     return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5009))
-    debug = os.getenv("DEBUG", "False").lower() == "true"
-    app.run(port=port, debug=debug)
+    app.run(host='0.0.0.0', port=5009)

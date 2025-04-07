@@ -14,41 +14,58 @@ services:
   #     - ./database/email_service.sql:/docker-entrypoint-initdb.d/init_email_service.sql
   #     - ./database/events_service.sql:/docker-entrypoint-initdb.d/init_events_service.sql
   #     - ./database/events_registration.sql:/docker-entrypoint-initdb.d/init_events_registration.sql
-  #     # Uncomment after all SQL files done
-  #     # - mysql_data:/var/lib/mysql
+  #     - mysql_data:/var/lib/mysql
   #   environment:
   #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
   #   networks:
   #     - app-network
-      
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
-    volumes: 
+    volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
 
-  # inbox_queue_consumer:
-  #   build:
-  #     context: ./backend/rabbitmq
-  #     dockerfile: Dockerfile
-  #   container_name: inbox_queue_consumer
-  #   environment:
-  #     - RABBITMQ_HOST=rabbitmq
-  #     - RABBITMQ_PORT=5672
-  #     - EXCHANGE_NAME=hangout_exchange
-  #     - EXCHANGE_TYPE=direct
-  #     - QUEUE_NAME=inbox
-  #     - ROUTING_KEY=inbox_message
-  #     - API_ENDPOINT=http://inbox_service:5006/api/inbox/create
-  #   depends_on:
-  #     - rabbitmq
-  #   networks:
-  #     - app-network
+  inbox_queue_consumer:
+    build:
+      context: ./backend/rabbitmq/inbox_queue
+      dockerfile: Dockerfile
+    container_name: inbox_queue_consumer
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - EXCHANGE_NAME=hangout_exchange
+      - EXCHANGE_TYPE=direct
+      - QUEUE_NAME=inbox
+      - ROUTING_KEY=inbox_message
+      - API_ENDPOINT=http://inbox_service:5006/api/inbox/create
+    depends_on:
+      - rabbitmq
+    networks:
+      - app-network
+
+  event_registration_queue_consumer:
+    build:
+      context: ./backend/rabbitmq/event_registration_queue
+      dockerfile: Dockerfile
+    container_name: event_registration_queue_consumer
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - EXCHANGE_NAME=hangout_exchange
+      - EXCHANGE_TYPE=direct
+      - REGISTRATION_QUEUE_NAME=event_registration
+      - REGISTRATION_ROUTING_KEY=event_registration
+      - REGISTRATION_API_ENDPOINT=http://localhost:5010/api/register_internal
+    depends_on:
+      - rabbitmq
+    networks:
+      - app-network
 
   kong:
     image: kong/kong-gateway:3.9
@@ -66,39 +83,179 @@ services:
       - ./backend/kong/routes.yaml:/etc/kong/routes.yaml
     ports:
       - "8000:8000"
-      - "8001:8001" 
+      - "8001:8001"
       - "8002:8002"
     networks:
       - app-network
 
-  # community_service:
-  #   build:
-  #     context: ./backend/atomic/community_service
-  #     dockerfile: Dockerfile
-  #   container_name: community_service
-  #   ports:
-  #     - "5001:5001" 
-  #   environment:
-  #     - DATABASE_URL=${DATABASE_URL}/community_service
-  #   depends_on:
-  #     - mysql
-  #   networks:
-  #     - app-network
-      
-  # inbox_service:
-  #   build:
-  #     context: ./backend/atomic/inbox_service
-  #     dockerfile: Dockerfile
-  #   container_name: inbox_service
-  #   ports:
-  #     - "5006:5006"
-  #   environment:
-  #     - DATABASE_URL=${DATABASE_URL}/inbox_service
-  #   depends_on:
-  #     - mysql
-  #   networks:
-  #     - app-network
-      
+  user_service:
+    build:
+      context: ./backend/atomic/user_service
+      dockerfile: Dockerfile
+    container_name: user_service
+    ports:
+      - "5000:5000"
+    environment:
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+    networks:
+      - app-network
+
+  community_service:
+    build:
+      context: ./backend/atomic/community_service
+      dockerfile: Dockerfile
+    container_name: community_service
+    ports:
+      - "5001:5001"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/community_service
+    networks:
+      - app-network
+
+  post_service:
+    build:
+      context: ./backend/atomic/post_service
+      dockerfile: Dockerfile
+    container_name: post_service
+    ports:
+      - "5002:5002"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/post_service
+    networks:
+      - app-network
+
+  events_service:
+    build:
+      context: ./backend/atomic/events_service
+      dockerfile: Dockerfile
+    container_name: events_service
+    ports:
+      - "5004:5004"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/events_service
+    networks:
+      - app-network
+
+  event_registration_service:
+    build:
+      context: ./backend/atomic/event_registration_service
+      dockerfile: Dockerfile
+    container_name: event_registration_service
+    ports:
+      - "5005:5005"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/event_registrations_database
+    networks:
+      - app-network
+
+  inbox_service:
+    build:
+      context: ./backend/atomic/inbox_service
+      dockerfile: Dockerfile
+    container_name: inbox_service
+    ports:
+      - "5006:5006"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/inbox_service
+    networks:
+      - app-network
+  content_moderation_service:
+    build:
+      context: ./backend/atomic/content_moderation_service
+      dockerfile: Dockerfile
+    container_name: content_moderation_service
+    ports:
+      - "5007:5007"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/content_moderation_service
+    networks:
+      - app-network
+
+  email_service:
+    build:
+      context: ./backend/atomic/email_service
+      dockerfile: Dockerfile
+    container_name: email_service
+    ports:
+      - "5008:5008"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}/email_service
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    networks:
+      - app-network
+
+  manage_event_service:
+    build:
+      context: ./backend/composite/manage_event_service
+      dockerfile: Dockerfile
+    container_name: manage_event_service
+    ports:
+      - "5009:5009"
+    environment:
+      - EVENTS_SERVICE_URL=http://events_service:5004
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - EXCHANGE_NAME=hangout_exchange
+      - ROUTING_KEY=inbox_message
+    depends_on:
+      - events_service
+      - rabbitmq
+    networks:
+      - app-network
+
+  register_for_event_service:
+    build:
+      context: ./backend/composite/register_for_event_service
+      dockerfile: Dockerfile
+    container_name: register_for_event_service
+    ports:
+      - "5010:5010"
+    environment:
+      - EVENT_SERVICE_URL=http://events_service:5004
+      - EVENT_REGISTRATION_SERVICE_URL=http://event_registration_service:5005
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - EXCHANGE_NAME=hangout_exchange
+      - ROUTING_KEY=inbox_message
+      - REGISTRATION_ROUTING_KEY=event_registration
+    depends_on:
+      - events_service
+      - event_registration_service
+      - rabbitmq
+    networks:
+      - app-network
+
+  ban_content_service:
+    build:
+      context: ./backend/composite/ban_content_service
+      dockerfile: Dockerfile
+    container_name: ban_content_service
+    ports:
+      - "5011:5011"
+    environment:
+      - USER_SERVICE_URL=http://user_service:5000/api/users
+      - EMAIL_SERVICE_URL=http://email_service:5008/api/email
+      - POST_SERVICE_URL=http://post_service:5002/api/post
+      - COMMENT_SERVICE_URL=http://comment_service:5003/api/comment
+      - CONTENT_MODERATION_URL=http://content_moderation_service:5007/api/moderation
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - EXCHANGE_NAME=hangout_exchange
+      - ROUTING_KEY=inbox_message
+    depends_on:
+      - user_service
+      - email_service
+      - post_service
+      - content_moderation_service
+      - rabbitmq
+    networks:
+      - app-network
+
   # frontend:
   #   build:
   #     context: ./frontend

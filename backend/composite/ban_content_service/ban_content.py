@@ -22,10 +22,10 @@ CORS(app)
 
 def publish_to_inbox(message):
     try:
-        amqp_host = os.environ.get("RABBITMQ_HOST", "localhost")
-        amqp_port = int(os.environ.get("RABBITMQ_PORT", 5672))
-        exchange_name = os.environ.get("EXCHANGE_NAME", "hangout_exchange")
-        routing_key = os.environ.get("ROUTING_KEY", "inbox_message")
+        amqp_host = os.getenv("RABBITMQ_HOST", "localhost")
+        amqp_port = int(os.getenv("RABBITMQ_PORT", 5672))
+        exchange_name = os.getenv("EXCHANGE_NAME", "hangout_exchange")
+        routing_key = os.getenv("ROUTING_KEY", "inbox_message")
 
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=amqp_host, port=amqp_port)
@@ -194,4 +194,4 @@ def delete_content(content_type, content_id):
 
 
 if __name__ == "__main__":
-    app.run(port=5011, debug=True)
+    app.run(host="0.0.0.0", port=5011)
