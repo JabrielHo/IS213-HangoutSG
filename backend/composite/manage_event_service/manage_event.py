@@ -32,6 +32,24 @@ class EventsServiceClient:
         response = requests.delete(f"{self.base_url}/api/events/{event_id}")
         return response.json(), response.status_code
     
+    def validate_location(postal_code):
+        url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={postal_code}&returnGeom=Y&getAddrDetails=Y"
+        
+        response = requests.get(url)
+        
+        if response.status_code != 200:
+            return response.json(), response.status_code
+
+        data = response.json()
+        
+        if data.get("found", 0) == 0:
+            return {"error": "Bad address"}, response.status_code  
+        
+        first_result = data["results"][0]
+        address = f"{first_result['BLK_NO']} {first_result['ROAD_NAME']}, Singapore {first_result['POSTAL']}"
+        
+        return address
+    
     def publish_to_inbox(message):
         try:
             amqp_host = os.getenv("RABBITMQ_HOST", "localhost")
@@ -69,7 +87,7 @@ def create_event():
     event_data = request.json
     
     # Validate required fields
-    required_fields = ["community_id", "organizer_id", "title", "event_date"]
+    required_fields = ["community_id", "organizer_id", "title", "event_date", "location", "description", "capacity"]
     for field in required_fields:
         if field not in event_data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
@@ -78,6 +96,10 @@ def create_event():
     subject = event_data["title"]
     content = event_data["description"]
     community_id = event_data["community_id"]
+    postal_code = event_data["location"]
+
+    #validate location
+    event_data["location"] = events_client.validate_location(postal_code)
     
     # get user_ID from community
     response = requests.get(OUTSYSTEM_URL + community_id)
