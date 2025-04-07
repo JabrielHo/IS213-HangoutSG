@@ -86,9 +86,14 @@
   
   <script>
   import axios from 'axios';
+  import { useAuth0 } from '@auth0/auth0-vue';
   
   export default {
     name: 'CreateEventView',
+    setup() {
+      const { user, isAuthenticated } = useAuth0();
+      return { user, isAuthenticated };
+    },
     data() {
       return {
         event: {
@@ -98,12 +103,17 @@
           event_date: '',
           capacity: 1,
           community_id: '',
-          organizer_id: 'auth0|67cd8623469fee2d24e73bfb' // This would typically come from auth service
+          organizer_id: null // Will be set in created() hook
         },
         communities: [],
         loading: false,
         error: null
       };
+    },
+    computed: {
+      currentUserId() {
+        return this.isAuthenticated && this.user ? this.user.sub : null;
+      }
     },
     methods: {
       async fetchCommunities() {
@@ -118,6 +128,9 @@
       async submitEvent() {
         this.loading = true;
         try {
+          // Ensure organizer_id is set to current user
+          this.event.organizer_id = this.currentUserId;
+          
           // Format the date in the format expected by the server if necessary
           const formattedEvent = { ...this.event };
           
@@ -141,85 +154,93 @@
     },
     created() {
       this.fetchCommunities();
+      // Set the organizer_id from the computed property
+      this.event.organizer_id = this.currentUserId;
     }
-  }
+  };
   </script>
   
   <style scoped>
   .create-event-container {
     max-width: 800px;
     margin: 0 auto;
-    padding: 30px;
+    padding: 2rem;
   }
   
   h1 {
-    font-size: 2rem;
-    margin-bottom: 30px;
-    color: #333;
     text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
   }
   
   .event-form {
-    background-color: white;
-    padding: 30px;
+    background-color: #f9f9f9;
+    padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
   
   .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
   }
   
   label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #444;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #555;
   }
   
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     width: 100%;
-    padding: 12px;
+    padding: 0.75rem;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
   }
   
-  textarea {
-    resize: vertical;
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
   }
   
   .form-actions {
     display: flex;
     justify-content: space-between;
-    margin-top: 30px;
+    margin-top: 2rem;
   }
   
-  .cancel-btn, .submit-btn {
-    padding: 12px 24px;
+  button {
+    padding: 0.75rem 1.5rem;
     border-radius: 4px;
-    font-weight: bold;
+    font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s;
   }
   
   .cancel-btn {
-    background-color: #f2f2f2;
-    color: #333;
+    background-color: #f5f5f5;
     border: 1px solid #ddd;
-  }
-  
-  .submit-btn {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
+    color: #666;
   }
   
   .cancel-btn:hover {
-    background-color: #e6e6e6;
+    background-color: #e5e5e5;
+  }
+  
+  .submit-btn {
+    background-color: #4a90e2;
+    border: none;
+    color: white;
+    font-weight: 600;
   }
   
   .submit-btn:hover {
-    background-color: #45a049;
+    background-color: #3a80d2;
   }
   </style>
