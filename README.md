@@ -61,6 +61,7 @@ $ docker compose down -v
     <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" alt="flasklogo" />
     <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="sqlalchemy logo" />
     <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python logo" />
+    <img src="https://img.shields.io/badge/Flask_SocketIO-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="flask socketio logo" />
 </p>
 
 <p align="center"><strong>API Gateway</strong></p>
