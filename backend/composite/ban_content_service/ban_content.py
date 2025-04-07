@@ -84,7 +84,7 @@ def ban_content():
         return jsonify({"code": 400, "message": "Missing flag_id in request body"}), 400
 
     try:
-        response = requests.get(f"http://localhost:5007/api/moderation/get/{flag_id}")
+        response = requests.get(CONTENT_MODERATION_URL+ "/"+ flag_id)
         
         if response.status_code != 200:
             return jsonify({"code": 500, "message": "Failed to fetch content details"}), 500
@@ -100,7 +100,7 @@ def ban_content():
 
         service_url = None
         if content_type == "post":
-            service_url = f"http://localhost:5002/api/post/{content_id}"
+            service_url = POST_SERVICE_URL+"/"+content_id
             response = requests.get(service_url)
             if response.status_code != 200:
                 return jsonify({"code": 500, "message": "Failed to fetch post details"}), 500
@@ -108,7 +108,7 @@ def ban_content():
             author_id = post_data.get('data', {}).get('author_id')
         elif content_type == "comment":
             # Send GET request to the COMMENT service
-            service_url = f"http://localhost:5003/api/comment/{content_id}"
+            service_url = COMMENT_SERVICE_URL+"/" +content_id
             response = requests.get(service_url)
             if response.status_code != 200:
                 return jsonify({"code": 500, "message": "Failed to fetch comment details"}), 500
@@ -145,7 +145,7 @@ def ban_content():
             }
         )
 
-        response = requests.post(f"http://localhost:5000/api/users/ban/{author_id}",json={"reason": "Inappropriate content reported"})
+        response = requests.post(f"{USER_SERVICE_URL}/ban/{author_id}",json={"reason": "Inappropriate content reported"})
 
         # Remove from moderation records
         mod_delete_url = f"{CONTENT_MODERATION_URL}/delete/flag/{flag_id}"
@@ -159,38 +159,6 @@ def ban_content():
     except requests.exceptions.RequestException as e:
         # Handle any request exceptions (e.g., server not reachable, timeout, etc.)
         return jsonify({"code": 500, "message": f"Error fetching content details: {str(e)}"}), 500
-
-
-@app.route("/api/delete/<string:content_type>/<string:content_id>", methods=["DELETE"])
-def delete_content(content_type, content_id):
-    """Delete a post or comment and remove its record from the moderation system"""
-    if content_type not in ["post", "comment"]:
-        return jsonify({"code": 400, "message": "Invalid content type"}), 400
-
-    service_url = None
-    if content_type == "post":
-        service_url = f"http://localhost:5002/api/post/{content_id}"
-        
-    else:
-        service_url = f"http://localhost:5003/api/comment/{content_id}"
-        
-    if service_url:
-        update_response = requests.put(service_url+"/status", json={"status": "unpublished"})
-        if update_response.status_code != 200:
-            return jsonify({"code": 500, "message": "Failed to update content status"}), 500
-
-
-
-
-    # Remove from moderation records
-    mod_delete_url = f"{CONTENT_MODERATION_URL}/delete/{content_type}/{content_id}"
-    mod_delete_response = requests.post(mod_delete_url)
-
-    if mod_delete_response.status_code != 200:
-        return jsonify({"code": 500, "message": "Failed to delete moderation record"}), 500
-
-    return jsonify({"code": 200, "message": f"{content_type} {content_id} deleted"}), 200
-
 
 
 if __name__ == "__main__":
