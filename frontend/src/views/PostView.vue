@@ -1,4 +1,5 @@
 <template>
+  <!-- Keeping the existing template code unchanged except for the nested comment structure -->
   <div v-if="authLoading || loading" class="text-center my-5">
     <div class="spinner-border" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -11,13 +12,14 @@
   </div>
 
   <div v-else class="post-view">
+    <!-- Post details section (unchanged) -->
     <div class="post-details">
       <h2>{{ post.title }}</h2>
       <p class="meta">
         <span class="author">By {{ authorUsername }}</span> •
         <span class="date">{{ formatDate(post.created_at) }}</span> •
-        <span class="community"
-          >in community:
+        <span class="community">
+          in community:
           <span v-if="communityLoading">loading...</span>
           <span v-else>{{ communityName }}</span>
         </span>
@@ -27,7 +29,7 @@
 
     <hr />
 
-    <!-- Comment form for authenticated users only -->
+    <!-- Comment form for authenticated users only (unchanged) -->
     <div v-if="isAuthenticated" class="comment-form mb-4">
       <h4>Add a comment</h4>
       <div class="form-group">
@@ -48,7 +50,7 @@
       </button>
     </div>
 
-    <!-- Login prompt for non-authenticated users -->
+    <!-- Login prompt for non-authenticated users (unchanged) -->
     <div v-else class="login-prompt card p-4 text-center my-4 text-white bg-dark">
       <h4>Please login or sign up to comment</h4>
       <p>Join the conversation by logging in or creating an account</p>
@@ -59,24 +61,180 @@
     </div>
 
     <!-- Comments section for all users - authenticated or not -->
-    <CommentsPost
-      :comments="comments"
-      :loading="commentsLoading"
-      :isSubmitting="isSubmittingComment"
-      :replyText="replyText"
-      :activeReplyId="activeReplyId"
-      :currentUser="isAuthenticated ? { id: user.sub, username: user.username } : null"
-      :isAuthenticated="isAuthenticated"
-      @update:replyText="replyText = $event"
-      @submit-comment="submitComment"
-      @toggle-reply="toggleReplyForm"
-      @cancel-reply="cancelReply"
-    />
+    <div class="comments-section">
+      <h4>{{ publishedComments.length }} {{ publishedComments.length === 1 ? 'Comment' : 'Comments' }}</h4>
+
+      <div v-if="commentsLoading" class="text-center my-4">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading Comments...</p>
+      </div>
+
+      <div v-else-if="publishedComments.length === 0" class="no-comments">Be the first to comment!</div>
+
+      <div v-else class="comment-items">
+        <!-- Top-level comments -->
+        <div 
+          v-for="comment in topLevelComments" 
+          :key="comment.comment_id" 
+          class="comment-item"
+        >
+          <CommentsPost
+            :comment="comment"
+            :isAuthenticated="isAuthenticated"
+            :isHovered="hoveredCommentIds[comment.comment_id]"
+            :isActiveReply="activeReplyId === comment.comment_id"
+            :activeReplyId="activeReplyId"
+            @mouseover="setHoveredComment(comment.comment_id, true)"
+            @mouseleave="setHoveredComment(comment.comment_id, false)"
+            @toggle-reply="toggleReplyForm"
+            @report-comment="reportComment"
+          >
+            <!-- Reply form slot -->
+            <template v-if="isAuthenticated && activeReplyId === comment.comment_id" v-slot:reply-form>
+              <div class="reply-form mt-2">
+                <div class="form-group">
+                  <textarea
+                    class="form-control form-control-sm"
+                    v-model="replyText"
+                    placeholder="Write a reply..."
+                    rows="2"
+                  ></textarea>
+                </div>
+                <div class="d-flex mt-2">
+                  <button
+                    class="btn btn-sm btn-primary me-2"
+                    @click="submitComment(comment.comment_id)"
+                    :disabled="!replyText.trim() || isSubmittingComment"
+                  >
+                    <span v-if="isSubmittingComment">Posting...</span>
+                    <span v-else>Post Reply</span>
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="cancelReply"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </template>
+            
+            <!-- Nested replies slot -->
+            <template v-if="getNestedReplies(comment.comment_id).length > 0" v-slot:nested-comments>
+              <div class="nested-comments mt-3">
+                <div 
+                  v-for="reply in getNestedReplies(comment.comment_id)" 
+                  :key="reply.comment_id" 
+                  class="nested-comment-item"
+                >
+                  <CommentsPost
+                    :comment="reply"
+                    :isAuthenticated="isAuthenticated"
+                    :isHovered="hoveredCommentIds[reply.comment_id]"
+                    :isActiveReply="activeReplyId === reply.comment_id"
+                    :activeReplyId="activeReplyId"
+                    @mouseover="setHoveredComment(reply.comment_id, true)"
+                    @mouseleave="setHoveredComment(reply.comment_id, false)"
+                    @toggle-reply="toggleReplyForm"
+                    @report-comment="reportComment"
+                  >
+                    <!-- Reply form slot for nested replies -->
+                    <template v-if="isAuthenticated && activeReplyId === reply.comment_id" v-slot:reply-form>
+                      <div class="reply-form mt-2">
+                        <div class="form-group">
+                          <textarea
+                            class="form-control form-control-sm"
+                            v-model="replyText"
+                            placeholder="Write a reply..."
+                            rows="2"
+                          ></textarea>
+                        </div>
+                        <div class="d-flex mt-2">
+                          <button
+                            class="btn btn-sm btn-primary me-2"
+                            @click="submitComment(reply.comment_id)"
+                            :disabled="!replyText.trim() || isSubmittingComment"
+                          >
+                            <span v-if="isSubmittingComment">Posting...</span>
+                            <span v-else>Post Reply</span>
+                          </button>
+                          <button
+                            class="btn btn-sm btn-outline-secondary"
+                            @click="cancelReply"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                    
+                    <!-- Recursive nested replies - allowing for replies to replies at any level -->
+                    <template v-if="getNestedReplies(reply.comment_id).length > 0" v-slot:nested-comments>
+                      <div class="nested-comments mt-3">
+                        <div 
+                          v-for="nestedReply in getNestedReplies(reply.comment_id)" 
+                          :key="nestedReply.comment_id" 
+                          class="nested-comment-item"
+                        >
+                          <CommentsPost
+                            :comment="nestedReply"
+                            :isAuthenticated="isAuthenticated"
+                            :isHovered="hoveredCommentIds[nestedReply.comment_id]"
+                            :isActiveReply="activeReplyId === nestedReply.comment_id"
+                            :activeReplyId="activeReplyId"
+                            @mouseover="setHoveredComment(nestedReply.comment_id, true)"
+                            @mouseleave="setHoveredComment(nestedReply.comment_id, false)"
+                            @toggle-reply="toggleReplyForm"
+                            @report-comment="reportComment"
+                          >
+                            <!-- Reply form for deeply nested replies -->
+                            <template v-if="isAuthenticated && activeReplyId === nestedReply.comment_id" v-slot:reply-form>
+                              <div class="reply-form mt-2">
+                                <div class="form-group">
+                                  <textarea
+                                    class="form-control form-control-sm"
+                                    v-model="replyText"
+                                    placeholder="Write a reply..."
+                                    rows="2"
+                                  ></textarea>
+                                </div>
+                                <div class="d-flex mt-2">
+                                  <button
+                                    class="btn btn-sm btn-primary me-2"
+                                    @click="submitComment(nestedReply.comment_id)"
+                                    :disabled="!replyText.trim() || isSubmittingComment"
+                                  >
+                                    <span v-if="isSubmittingComment">Posting...</span>
+                                    <span v-else>Post Reply</span>
+                                  </button>
+                                  <button
+                                    class="btn btn-sm btn-outline-secondary"
+                                    @click="cancelReply"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            </template>
+                          </CommentsPost>
+                        </div>
+                      </div>
+                    </template>
+                  </CommentsPost>
+                </div>
+              </div>
+            </template>
+          </CommentsPost>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth0 } from '@auth0/auth0-vue'
 import CommentsPost from '../components/CommentsPost.vue'
@@ -93,7 +251,7 @@ const communityName = ref('')
 const communityLoading = ref(false)
 const authorUsername = ref('Loading...')
 
-// Comments-related state moved from CommentsPost
+// Comments-related state
 const comments = ref([])
 const commentsLoading = ref(true)
 const commentsError = ref(null)
@@ -101,8 +259,15 @@ const newComment = ref('')
 const replyText = ref('')
 const activeReplyId = ref(null)
 const isSubmittingComment = ref(false)
+// Replace single hoveredCommentId with a reactive object to track all comment hover states
+const hoveredCommentIds = reactive({})
 
-// Comments computed properties
+// Helper function to set a comment's hover state
+const setHoveredComment = (commentId, isHovered) => {
+  hoveredCommentIds[commentId] = isHovered
+}
+
+// Computed properties for comments
 const publishedComments = computed(() => {
   return comments.value.filter(comment => comment.status === 'published');
 })
@@ -111,8 +276,10 @@ const topLevelComments = computed(() => {
   return publishedComments.value.filter(comment => !comment.parent_id);
 })
 
-const getRepliesForComment = (commentId) => {
-  return publishedComments.value.filter(comment => comment.parent_id === commentId);
+// Get all replies for a specific comment, no matter the nesting level
+const getNestedReplies = (commentId) => {
+  return publishedComments.value.filter(comment => comment.parent_id === commentId)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 }
 
 const formatDate = (dateString) => {
@@ -127,27 +294,6 @@ const formatDate = (dateString) => {
   }
 
   return new Date(dateString).toLocaleString(undefined, options)
-}
-
-const formatTimeAgo = (timestamp) => {
-  if (!timestamp) return 'unknown time'
-
-  const now = new Date()
-  const commentDate = new Date(timestamp)
-  const diffInSeconds = Math.floor((now - commentDate) / 1000)
-
-  if (diffInSeconds < 60) {
-    return 'just now'
-  } else if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60)
-    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`
-  } else if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600)
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
-  } else {
-    const days = Math.floor(diffInSeconds / 86400)
-    return `${days} ${days === 1 ? 'day' : 'days'} ago`
-  }
 }
 
 // Toggle reply form visibility
@@ -220,7 +366,7 @@ const fetchCommunityInfo = async (communityId) => {
   }
 }
 
-// Moved from CommentsPost
+// Fetch user data for comments
 const fetchUserData = async (userIds) => {
   const userDataMap = {}
   await Promise.all(
@@ -239,7 +385,7 @@ const fetchUserData = async (userIds) => {
   return userDataMap
 }
 
-// Fetch comments - moved from CommentsPost
+// Fetch comments
 const fetchComments = async () => {
   commentsLoading.value = true
   commentsError.value = null
@@ -249,20 +395,7 @@ const fetchComments = async () => {
     if (response.ok) {
       const data = await response.json()
       let commentsData = data.data.comments || []
-      
-      // Sort comments with newest first for top-level comments
-      // but keep replies in chronological order
-      commentsData.sort((a, b) => {
-        // If both are top-level or both are replies, sort by time (newest first for top-level)
-        if ((!a.parent_id && !b.parent_id) || (a.parent_id && b.parent_id)) {
-          return !a.parent_id ? 
-            new Date(b.created_at) - new Date(a.created_at) : // Top level: newest first
-            new Date(a.created_at) - new Date(b.created_at);  // Replies: oldest first
-        }
-        // Put top-level comments before replies
-        return a.parent_id ? 1 : -1;
-      });
-      
+      console.log(data)
       // Extract unique author IDs
       const uniqueAuthorIds = [...new Set(commentsData.map(comment => comment.author_id))]
       
@@ -270,7 +403,7 @@ const fetchComments = async () => {
       const userDataMap = await fetchUserData(uniqueAuthorIds)
       
       // Add username to each comment
-      comments.value = commentsData.map(comment => {
+      const processedComments = commentsData.map(comment => {
         const userData = userDataMap[comment.author_id]
         return {
           ...comment,
@@ -279,6 +412,19 @@ const fetchComments = async () => {
           status: comment.status || 'published'
         }
       })
+      console.log(processedComments)
+      
+      // Only sort top-level comments by newest first
+      // Don't change the order of replies as they'll be sorted when retrieved
+      processedComments.sort((a, b) => {
+        // If both are top-level comments, sort newest first
+        if (!a.parent_id && !b.parent_id) {
+          return new Date(b.created_at) - new Date(a.created_at);
+        }
+        return 0; // Don't change the order for replies
+      });
+      
+      comments.value = processedComments;
     } else {
       const errorData = await response.json()
       commentsError.value = errorData.message || 'Failed to load comments'
@@ -292,7 +438,7 @@ const fetchComments = async () => {
   }
 }
 
-// Submit comment - moved from CommentsPost
+// Submit comment
 const submitComment = async (parentId) => {
   // Ensure user is authenticated before submitting
   if (!isAuthenticated.value) {
@@ -340,6 +486,44 @@ const submitComment = async (parentId) => {
     alert('Failed to submit comment. Please try again.')
   } finally {
     isSubmittingComment.value = false
+  }
+}
+
+// Report comment
+const reportComment = async (comment, event) => {
+  event.preventDefault();  // Prevent the default action of the event
+  // Prompt user to input a reason for reporting the comment
+  const reason = prompt('Please provide a reason for reporting this comment:');
+  
+  if (!reason) {
+    alert('You must provide a reason to report the comment.');
+    return;
+  }
+  try {
+    const response = await fetch(`http://localhost:5007/api/moderation/report/comment/${comment.comment_id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        poster_id: comment.author_id, 
+        user_id: user.value.sub,   
+        comment_id: comment.comment_id, 
+        content: comment.content,
+        reason: reason
+      }), 
+    });
+    if (response.ok) {
+      // If the response status is 200-299
+      const responseData = await response.json(); // Parse the JSON response
+      alert('Comment reported. Thank you for helping keep the community safe.');
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to report the comment.');
+    }
+  } catch (error) {
+    console.error('Error while reporting the comment:', error);
+    alert('There was an error while reporting the comment.');
   }
 }
 
@@ -444,5 +628,42 @@ onMounted(() => {
   background-color: #f8f9fa;
   padding: 1.5rem;
   border-radius: 8px;
+}
+
+/* Comments section styles */
+.comments-section {
+  margin-top: 2rem;
+}
+
+.no-comments {
+  color: #6c757d;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.comment-item {
+  margin-bottom: 1rem;
+}
+
+.reply-form {
+  background-color: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+.nested-comments {
+  margin-left: 2rem;
+  border-left: 2px solid #dee2e6;
+  padding-left: 1rem;
+}
+
+.nested-comment-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nested-comment-item:last-child {
+  border-bottom: none;
 }
 </style>

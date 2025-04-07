@@ -19,7 +19,7 @@ db.init_app(app)
 def create_comment():
     try:
         data = request.get_json()
-        required_fields = ["post_id", "author_id", "content"]
+        required_fields = ["post_id", "author_id", "content", "parent_id"]
         missing = [f for f in required_fields if not data.get(f)]
 
         if missing:
@@ -31,7 +31,8 @@ def create_comment():
         comment = Comment(
             post_id=data["post_id"],
             author_id=data["author_id"],
-            content=data["content"]
+            content=data["content"],
+            parent_id=data["parent_id"]
         )
 
         db.session.add(comment)

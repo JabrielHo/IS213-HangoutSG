@@ -3,6 +3,7 @@ USE comment_service;
 
 CREATE TABLE IF NOT EXISTS comments (
     comment_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    parent_id CHAR(36),
     post_id CHAR(36) NOT NULL,
     author_id VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
