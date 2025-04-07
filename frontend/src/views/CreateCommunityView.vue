@@ -37,9 +37,31 @@ const submitForm = async () => {
     }
 
     const result = await response.json()
+    // Join the creator to the community automatically
+    if (result && result.data && result.data.community_id) {
+      const communityId = result.data.community_id
+      const userId = user.value?.sub || ''
+      
+      try {
+        // Make API call to join the community
+        const joinUrl = `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/communityaddmember/${communityId}/${userId}`
+        
+        const joinResponse = await fetch(joinUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    if (result && result.data) {
+        if (!joinResponse.ok) {
+          console.error('Failed to join the community automatically')
+        } else {
+          console.log('Successfully joined the newly created community')
+        }
+      } catch (joinError) {
+        console.error('Error joining community:', joinError)
+      }
+
       const communityName = result.data.name || community.value.name
       router.push('/c/' + communityName.toLowerCase())
     } else {

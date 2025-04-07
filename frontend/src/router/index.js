@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import('../views/EventsView.vue'),
     },
     {
+      path: '/events/:community',
+      name: 'events',
+      component: () => import('../views/EventsView.vue'),
+    },
+    {
       path: '/events-event',
       name: 'events-event',
       component: () => import('../views/CreateEventView.vue'),

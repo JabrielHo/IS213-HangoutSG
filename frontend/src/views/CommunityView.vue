@@ -129,9 +129,8 @@ const createPost = () => {
 }
 
 const viewEvents = () => {
-  router.push('/')
+  router.push(`/events/${community.value.name}`)
 }
-
 const goToPost = (postId) => {
   router.push(`/post/${postId}`)
 }

@@ -2,7 +2,8 @@
   <div class="events-container">
     <h1>Events</h1>
     <p class="welcome-message">
-      Looking to join a Event? Discover exciting HangoutSG events happening near you! Explore a wide range of hobbies and meet fellow enthusiasts. Find your next adventure today!
+      Looking to join a Event? Discover exciting HangoutSG events happening near you! Explore a wide
+      range of hobbies and meet fellow enthusiasts. Find your next adventure today!
     </p>
 
     <div class="filter-container">
@@ -10,24 +11,28 @@
         <label for="communityFilter">Filter by Community:</label>
         <select id="communityFilter" v-model="selectedCommunity" @change="filterEvents">
           <option value="">All Communities</option>
-          <option v-for="community in communities" :key="community.community_id" :value="community.community_id">
+          <option
+            v-for="community in communities"
+            :key="community.community_id"
+            :value="community.community_id"
+          >
             {{ community.name }}
           </option>
         </select>
       </div>
-      
+
       <div class="sort-section">
         <span>Sort by:</span>
-        <button 
-          @click="sortEvents('newest')" 
-          :class="{ 'active': sortOrder === 'newest' }"
+        <button
+          @click="sortEvents('newest')"
+          :class="{ active: sortOrder === 'newest' }"
           class="sort-btn"
         >
           Newest
         </button>
-        <button 
-          @click="sortEvents('oldest')" 
-          :class="{ 'active': sortOrder === 'oldest' }"
+        <button
+          @click="sortEvents('oldest')"
+          :class="{ active: sortOrder === 'oldest' }"
           class="sort-btn"
         >
           Oldest
@@ -35,19 +40,17 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading">
-      Loading events...
-    </div>
-    
+    <div v-if="loading" class="loading">Loading events...</div>
+
     <div v-else-if="filteredEvents.length === 0" class="no-events">
       <p>No events found. Why not create one?</p>
     </div>
-    
+
     <div v-else class="events-grid">
-      <EventCard 
-        v-for="event in filteredEvents" 
-        :key="event.event_id" 
-        :event="event" 
+      <EventCard
+        v-for="event in filteredEvents"
+        :key="event.event_id"
+        :event="event"
         :userId="currentUserId"
       />
     </div>
@@ -59,19 +62,21 @@
 </template>
 
 <script>
-import axios from 'axios';
-import EventCard from '@/components/EventCard.vue';
+import axios from 'axios'
+import EventCard from '@/components/EventCard.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import { useRoute } from 'vue-router'
 
 export default {
   name: 'EventsView',
   components: {
-    EventCard
+    EventCard,
   },
   setup() {
     const { user, isAuthenticated } = useAuth0()
+    const route = useRoute()
 
-    return {user, isAuthenticated}
+    return { user, isAuthenticated, route }
   },
   data() {
     return {
@@ -81,7 +86,8 @@ export default {
       loading: true,
       error: null,
       sortOrder: 'newest',
-    };
+      communityNameFromUrl: null,
+    }
   },
   computed: {
     currentUserId() {
@@ -89,57 +95,72 @@ export default {
     },
     filteredEvents() {
       // First filter by community if one is selected
-      let filtered = this.selectedCommunity 
-        ? this.events.filter(event => event.community_id === this.selectedCommunity) 
-        : this.events;
-      
+      let filtered = this.selectedCommunity
+        ? this.events.filter((event) => event.community_id === this.selectedCommunity)
+        : this.events
+
       // Then sort by date
       return filtered.sort((a, b) => {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-      });
-    }
+        const dateA = new Date(a.created_at)
+        const dateB = new Date(b.created_at)
+        return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+      })
+    },
   },
   methods: {
     async fetchEvents() {
       try {
-        const response = await axios.get('http://localhost:5004/api/events');
-        this.events = response.data.events;
+        const response = await axios.get('http://localhost:5004/api/events')
+        this.events = response.data.events
       } catch (error) {
-        console.error('Error fetching events:', error);
-        this.error = 'Failed to load events. Please try again later.';
+        console.error('Error fetching events:', error)
+        this.error = 'Failed to load events. Please try again later.'
       }
     },
     async fetchCommunities() {
       try {
-        const response = await axios.get('http://localhost:5001/api/community');
-        this.communities = response.data.data.communities;
+        const response = await axios.get('http://localhost:5001/api/community')
+        this.communities = response.data.data.communities
+
+        if (this.communityNameFromUrl && this.communities.length > 0) {
+          const matchingCommunity = this.communities.find(
+            (community) => community.name === this.communityNameFromUrl,
+          )
+
+          if (matchingCommunity) {
+            this.selectedCommunity = matchingCommunity.community_id
+          }
+        }
       } catch (error) {
-        console.error('Error fetching communities:', error);
-        this.error = 'Failed to load communities. Please try again later.';
+        console.error('Error fetching communities:', error)
+        this.error = 'Failed to load communities. Please try again later.'
       }
     },
     filterEvents() {
       // The filtering happens automatically through the computed property
     },
     sortEvents(order) {
-      this.sortOrder = order;
+      this.sortOrder = order
     },
     async loadData() {
-      this.loading = true;
-      try {
-        await Promise.all([this.fetchEvents(), this.fetchCommunities()]);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        this.loading = false;
+      this.loading = true
+
+      if (this.route.params.community) {
+        this.communityNameFromUrl = this.route.params.community
       }
-    }
+
+      try {
+        await Promise.all([this.fetchEvents(), this.fetchCommunities()])
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        this.loading = false
+      }
+    },
   },
   created() {
-    this.loadData();
-  }
+    this.loadData()
+  },
 }
 </script>
 
@@ -231,7 +252,7 @@ h1 {
 }
 
 .create-event-btn {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   text-decoration: none;
   padding: 12px 24px;
