@@ -49,7 +49,7 @@
     </div>
 
     <!-- Login prompt for non-authenticated users -->
-    <div v-else class="login-prompt card p-4 text-center my-4 bg-dark text-white">
+    <div v-else class="login-prompt card p-4 text-center my-4 text-white bg-dark">
       <h4>Please login or sign up to comment</h4>
       <p>Join the conversation by logging in or creating an account</p>
       <div class="d-flex justify-content-center gap-3 mt-3">

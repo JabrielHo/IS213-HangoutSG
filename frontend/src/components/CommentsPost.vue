@@ -227,6 +227,7 @@ export default {
 }
 
 .reply-form {
+  background-color: #f8f9fa;
   padding: 0.75rem;
   border-radius: 6px;
   margin-top: 0.5rem;
