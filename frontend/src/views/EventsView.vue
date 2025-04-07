@@ -363,10 +363,6 @@ h1 {
   color: #666;
 }
 
-.create-event-container-top {
-  /* No additional styles needed as it inherits the flex layout from header-container */
-}
-
 .create-event-btn {
   background-color: #4CAF50;
   color: white;
