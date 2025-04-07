@@ -4,10 +4,13 @@ import os
 from dotenv import load_dotenv
 import pika
 import json
+from flask_cors import CORS
 
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
+
 
 # Configuration
 EVENTS_SERVICE_URL = os.getenv("EVENTS_SERVICE_URL", "http://localhost:5004")

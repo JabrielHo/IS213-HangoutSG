@@ -14,12 +14,11 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
-# CREATE - Create a new comment
 @app.route("/api/comment", methods=["POST"])
 def create_comment():
     try:
         data = request.get_json()
-        required_fields = ["post_id", "author_id", "content", "parent_id"]
+        required_fields = ["post_id", "author_id", "content"]
         missing = [f for f in required_fields if not data.get(f)]
 
         if missing:
@@ -28,11 +27,14 @@ def create_comment():
                 "message": f"Missing fields: {', '.join(missing)}"
             }), 400
 
+        # Use None as the default value if parent_id is not provided
+        parent_id = data.get("parent_id")
+        
         comment = Comment(
             post_id=data["post_id"],
             author_id=data["author_id"],
             content=data["content"],
-            parent_id=data["parent_id"]
+            parent_id=parent_id
         )
 
         db.session.add(comment)
