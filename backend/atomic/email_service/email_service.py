@@ -13,12 +13,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Database Config docker
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-
-#local 
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:@localhost:3306/email_service"
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
@@ -95,10 +91,5 @@ def send_email():
             "message": f"An error occurred while sending the email: {e}"
         }), 500
 
-# Uncomment for Docker
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5008)
-
-# Start Flask app locally
-# if __name__ == "__main__":
-#     app.run(port=5002, debug=True)

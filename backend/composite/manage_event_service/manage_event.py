@@ -21,12 +21,12 @@ class EventsServiceClient:
         
     def create_event(self, event_data):
         """Create a new event by calling the atomic service"""
-        response = requests.post(f"{self.base_url}/events", json=event_data)
+        response = requests.post(f"{self.base_url}/api/events", json=event_data)
         return response.json(), response.status_code
         
     def delete_event(self, event_id):
         """Delete an event by calling the atomic service"""
-        response = requests.delete(f"{self.base_url}/events/{event_id}")
+        response = requests.delete(f"{self.base_url}/api/events/{event_id}")
         return response.json(), response.status_code
     
     def publish_to_inbox(message):
