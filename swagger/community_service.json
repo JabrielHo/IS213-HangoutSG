@@ -1,0 +1,148 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Community Service API",
+    "description": "API for managing communities",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/community": {
+      "post": {
+        "summary": "Create a new community",
+        "description": "Creates a new community with the provided details",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the community"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Description of the community"
+                  },
+                  "creator_id": {
+                    "type": "string",
+                    "description": "ID of the user creating the community"
+                  }
+                },
+                "required": ["name", "description", "creator_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Community created successfully"
+          },
+          "400": {
+            "description": "Invalid input - required fields are missing or empty"
+          },
+          "409": {
+            "description": "Conflict - community with the provided name already exists"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all communities",
+        "description": "Retrieves a list of all communities",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved communities"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/community/{community_id}": {
+      "get": {
+        "summary": "Get community by ID",
+        "description": "Retrieves a specific community by its ID",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID of the community"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved community"
+          },
+          "404": {
+            "description": "Community not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/community/name/{community_name}": {
+      "get": {
+        "summary": "Get community by name",
+        "description": "Retrieves a specific community by its name",
+        "parameters": [
+          {
+            "name": "community_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Name of the community"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved community"
+          },
+          "404": {
+            "description": "Community not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/community/creator/{creator_id}": {
+      "get": {
+        "summary": "Get communities by creator",
+        "description": "Retrieves all communities created by a specific user",
+        "parameters": [
+          {
+            "name": "creator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID of the creator"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved communities"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    }
+  }
+}
