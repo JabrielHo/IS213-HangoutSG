@@ -24,7 +24,11 @@ const joinLeaveError = ref(null)
 const sortedPosts = computed(() => {
   if (!posts.value.length) return []
 
-  return [...posts.value].sort((a, b) => {
+  // First filter out unpublished posts
+  const publishedPosts = posts.value.filter(post => post.status !== 'unpublished')
+  
+  // Then sort the remaining posts
+  return publishedPosts.sort((a, b) => {
     const dateA = new Date(a.created_at)
     const dateB = new Date(b.created_at)
 
@@ -146,7 +150,7 @@ const fetchCommunityData = async () => {
       return
     }
 
-    const response = await fetch(`http://localhost:5001/api/community/name/${communityName}`)
+    const response = await fetch(`http://localhost:8000/api/community/name/${communityName}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -169,7 +173,7 @@ const fetchPosts = async () => {
 
     // Step 1: Fetch posts and immediately display them
     const response = await fetch(
-      `http://localhost:5002/api/posts/community/${community.value.community_id}`
+      `http://localhost:8000/api/posts/community/${community.value.community_id}`
     )
 
     if (!response.ok) {
@@ -219,7 +223,7 @@ const fetchUserData = async (userIds) => {
   await Promise.all(
     userIds.map(async (userId) => {
       try {
-        const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
+        const userResponse = await fetch(`http://localhost:8000/api/users/${userId}`)
         if (userResponse.ok) {
           const userData = await userResponse.json()
           userDataMap[userId] = userData.data
@@ -237,7 +241,7 @@ const fetchCommentCounts = async (postIds) => {
   await Promise.all(
     postIds.map(async (postId) => {
       try {
-        const commentResponse = await fetch(`http://localhost:5003/api/comments/post/${postId}`)
+        const commentResponse = await fetch(`http://localhost:8000/api/comments/post/${postId}`)
         if (commentResponse.ok) {
           const commentData = await commentResponse.json()
           commentCountMap[postId] = commentData.data.comments ? commentData.data.comments.length : 0

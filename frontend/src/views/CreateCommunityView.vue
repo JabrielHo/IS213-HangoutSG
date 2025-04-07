@@ -23,7 +23,7 @@ const submitForm = async () => {
       creator_id: user.value?.sub || '',
     }
 
-    const response = await fetch('http://localhost:5001/api/community', {
+    const response = await fetch('http://localhost:8000/api/community', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,16 +41,16 @@ const submitForm = async () => {
     if (result && result.data && result.data.community_id) {
       const communityId = result.data.community_id
       const userId = user.value?.sub || ''
-      
+
       try {
         // Make API call to join the community
         const joinUrl = `https://personal-iw6ceuuv.outsystemscloud.com/Community_members/rest/CommunityMemberAPI/communityaddmember/${communityId}/${userId}`
-        
+
         const joinResponse = await fetch(joinUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
         })
 
         if (!joinResponse.ok) {

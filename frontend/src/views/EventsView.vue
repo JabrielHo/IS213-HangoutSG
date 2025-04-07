@@ -5,11 +5,11 @@
       <div class="create-event-container-top" v-if="currentUserId">
         <router-link to="/events-event" class="create-event-btn">Create Event</router-link>
       </div>
-
     </div>
-    
+
     <p class="welcome-message">
-      Looking to join a Event? Discover exciting HangoutSG events happening near you! Explore a wide range of hobbies and meet fellow enthusiasts. Find your next adventure today!
+      Looking to join a Event? Discover exciting HangoutSG events happening near you! Explore a wide
+      range of hobbies and meet fellow enthusiasts. Find your next adventure today!
     </p>
 
     <div class="filter-container">
@@ -17,24 +17,28 @@
         <label for="communityFilter">Filter by Community:</label>
         <select id="communityFilter" v-model="selectedCommunity" @change="filterEvents">
           <option value="">All Communities</option>
-          <option v-for="community in communities" :key="community.community_id" :value="community.community_id">
+          <option
+            v-for="community in communities"
+            :key="community.community_id"
+            :value="community.community_id"
+          >
             {{ community.name }}
           </option>
         </select>
       </div>
-      
+
       <div class="sort-section">
         <span>Sort by:</span>
-        <button 
-          @click="sortEvents('newest')" 
-          :class="{ 'active': sortOrder === 'newest' }"
+        <button
+          @click="sortEvents('newest')"
+          :class="{ active: sortOrder === 'newest' }"
           class="sort-btn"
         >
           Newest
         </button>
-        <button 
-          @click="sortEvents('oldest')" 
-          :class="{ 'active': sortOrder === 'oldest' }"
+        <button
+          @click="sortEvents('oldest')"
+          :class="{ active: sortOrder === 'oldest' }"
           class="sort-btn"
         >
           Oldest
@@ -42,26 +46,24 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading">
-      Loading events...
-    </div>
-    
+    <div v-if="loading" class="loading">Loading events...</div>
+
     <div v-else-if="filteredEvents.length === 0" class="no-events">
       <p>No events found. Why not create one?</p>
     </div>
-    
+
     <div v-else class="events-grid">
-      <EventCard 
-        v-for="event in filteredEvents" 
-        :key="event.event_id" 
-        :event="event" 
+      <EventCard
+        v-for="event in filteredEvents"
+        :key="event.event_id"
+        :event="event"
         :userId="currentUserId"
         :isRegistered="isUserRegisteredForEvent(event.event_id)"
         @register-event="registerForEvent"
         @delete-event="confirmDeleteEvent"
       />
     </div>
-    
+
     <!-- Loading overlay for registration and deletion -->
     <div v-if="isProcessing" class="loading-overlay">
       <div class="loading-content">
@@ -73,16 +75,15 @@
 </template>
 
 <script>
-import axios from 'axios';
-import EventCard from '@/components/EventCard.vue';
-import { useAuth0 } from '@auth0/auth0-vue';
+import axios from 'axios'
+import EventCard from '@/components/EventCard.vue'
+import { useAuth0 } from '@auth0/auth0-vue'
 import { useRoute } from 'vue-router'
-
 
 export default {
   name: 'EventsView',
   components: {
-    EventCard
+    EventCard,
   },
   setup() {
     const { user, isAuthenticated } = useAuth0()
@@ -103,7 +104,7 @@ export default {
       processingEventId: null,
       communityNameFromUrl: null,
       userRegistrations: [], // New data variable to store user registrations
-    };
+    }
   },
   computed: {
     currentUserId() {
@@ -111,36 +112,36 @@ export default {
     },
     filteredEvents() {
       // First filter by community if one is selected
-      let filtered = this.selectedCommunity 
-        ? this.events.filter(event => event.community_id === this.selectedCommunity) 
-        : this.events;
-      
+      let filtered = this.selectedCommunity
+        ? this.events.filter((event) => event.community_id === this.selectedCommunity)
+        : this.events
+
       // Then sort by date
       return filtered.sort((a, b) => {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-      });
-    }
+        const dateA = new Date(a.created_at)
+        const dateB = new Date(b.created_at)
+        return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+      })
+    },
   },
   methods: {
     async fetchEvents() {
       try {
-        const response = await axios.get('http://localhost:5004/api/events');
-        this.events = response.data.events;
+        const response = await axios.get('http://localhost:8000/api/events')
+        this.events = response.data.events
       } catch (error) {
-        console.error('Error fetching events:', error);
-        this.error = 'Failed to load events. Please try again later.';
+        console.error('Error fetching events:', error)
+        this.error = 'Failed to load events. Please try again later.'
       }
     },
     async fetchCommunities() {
       try {
-        const response = await axios.get('http://localhost:5001/api/community');
-        this.communities = response.data.data.communities;
+        const response = await axios.get('http://localhost:8000/api/community')
+        this.communities = response.data.data.communities
 
         if (this.communityNameFromUrl && this.communities.length > 0) {
           const matchingCommunity = this.communities.find(
-            (community) => community.name === this.communityNameFromUrl,
+            (community) => community.name === this.communityNameFromUrl
           )
 
           if (matchingCommunity) {
@@ -148,69 +149,74 @@ export default {
           }
         }
       } catch (error) {
-        console.error('Error fetching communities:', error);
-        this.error = 'Failed to load communities. Please try again later.';
+        console.error('Error fetching communities:', error)
+        this.error = 'Failed to load communities. Please try again later.'
       }
     },
     // New method to fetch user registrations
     async fetchUserRegistrations() {
-      if (!this.currentUserId) return;
-      
+      if (!this.currentUserId) {
+        console.log('No user ID available, skipping registration fetch')
+        return
+      }
+
       try {
-        const response = await axios.get(`http://localhost:5005/api/registrations/${this.currentUserId}`);
-        this.userRegistrations = response.data.events || [];
+        const response = await axios.get(
+          `http://localhost:8000/api/registrations/${this.currentUserId}`
+        )
+        this.userRegistrations = response.data.events || []
       } catch (error) {
-        console.error('Error fetching user registrations:', error);
+        console.error('Error fetching user registrations:', error)
       }
     },
     // New method to check if user is registered for a specific event
     isUserRegisteredForEvent(eventId) {
-      return this.userRegistrations.some(registration => registration.event_id === eventId);
+      return this.userRegistrations.some((registration) => registration.event_id === eventId)
     },
     filterEvents() {
       // The filtering happens automatically through the computed property
     },
     sortEvents(order) {
-      this.sortOrder = order;
+      this.sortOrder = order
     },
     async loadData() {
-      this.loading = true;
+      this.loading = true
       if (this.route.params.community) {
         this.communityNameFromUrl = this.route.params.community
       }
       try {
         await Promise.all([
-          this.fetchEvents(), 
+          this.fetchEvents(),
           this.fetchCommunities(),
-          this.fetchUserRegistrations() // Add this to load user registrations
-        ]);
+          this.fetchUserRegistrations(), // Add this to load user registrations
+        ])
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading data:', error)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     async registerForEvent(eventId) {
       // Check if already registered
       if (this.isUserRegisteredForEvent(eventId)) {
-        alert('You are already registered for this event.');
-        return;
+        alert('You are already registered for this event.')
+        return
       }
-      
-      if (this.isProcessing) return;
-      
+
+      if (this.isProcessing) return
+
       // Set processing state
-      this.isProcessing = true;
-      this.loadingMessage = 'Registering for event...';
-      this.processingEventId = eventId;
-      
+      this.isProcessing = true
+      this.loadingMessage = 'Registering for event...'
+      this.processingEventId = eventId
+
       try {
         await Promise.all([this.fetchEvents(), this.fetchCommunities()])
-        const response = await axios.post('http://127.0.0.1:5010/api/register', {
+        const response = await axios.post('http://127.0.0.1:8000/api/register', {
           event_id: eventId,
-          user_id: this.currentUserId
-        });
-        
+          user_id: this.currentUserId,
+        })
+
         // Check both status code and response data for success
         if (response.data && response.data.success) {
           // Add to local registrations to update UI immediately
@@ -218,59 +224,60 @@ export default {
             event_id: eventId,
             user_id: this.currentUserId,
             registered_at: new Date().toISOString(),
-            registration_id: response.data.registration_id || 'temp-id'
-          });
-          
-          alert('Successfully registered for event!');
+            registration_id: response.data.registration_id || 'temp-id',
+          })
+
+          alert('Successfully registered for event!')
         } else {
           // The request was successful but the operation failed
-          alert(response.data.message || 'Registration unsuccessful. Please try again.');
+          alert(response.data.message || 'Registration unsuccessful. Please try again.')
         }
       } catch (error) {
-        console.error('Error registering for event:', error);
+        console.error('Error registering for event:', error)
         // Extract error message from response if available
-        const errorMessage = error.response?.data?.message || 'Failed to register for event. Please try again.';
-        alert(errorMessage);
+        const errorMessage =
+          error.response?.data?.message || 'Failed to register for event. Please try again.'
+        alert(errorMessage)
       } finally {
         // Clear processing state
-        this.isProcessing = false;
-        this.loadingMessage = '';
-        this.processingEventId = null;
+        this.isProcessing = false
+        this.loadingMessage = ''
+        this.processingEventId = null
       }
     },
     confirmDeleteEvent(eventId) {
       if (confirm('Are you sure you want to delete this event?')) {
-        this.deleteEvent(eventId);
+        this.deleteEvent(eventId)
       }
     },
     async deleteEvent(eventId) {
-      if (this.isProcessing) return;
-      
+      if (this.isProcessing) return
+
       // Set processing state
-      this.isProcessing = true;
-      this.loadingMessage = 'Deleting event...';
-      this.processingEventId = eventId;
-      
+      this.isProcessing = true
+      this.loadingMessage = 'Deleting event...'
+      this.processingEventId = eventId
+
       try {
-        await axios.delete(`http://localhost:5009/api/events/${eventId}`);
-        
+        await axios.delete(`http://localhost:8000/api/events/${eventId}`)
+
         // Remove the deleted event from the events array
-        this.events = this.events.filter(event => event.event_id !== eventId);
-        alert('Event deleted successfully');
+        this.events = this.events.filter((event) => event.event_id !== eventId)
+        alert('Event deleted successfully')
       } catch (error) {
-        console.error('Error deleting event:', error);
-        alert('Failed to delete event. Please try again.');
+        console.error('Error deleting event:', error)
+        alert('Failed to delete event. Please try again.')
       } finally {
         // Clear processing state
-        this.isProcessing = false;
-        this.loadingMessage = '';
-        this.processingEventId = null;
+        this.isProcessing = false
+        this.loadingMessage = ''
+        this.processingEventId = null
       }
-    }
+    },
   },
   created() {
-    this.loadData();
-  }
+    this.loadData()
+  },
 }
 </script>
 
@@ -365,7 +372,7 @@ h1 {
 }
 
 .create-event-btn {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   text-decoration: none;
   padding: 12px 24px;
@@ -403,7 +410,7 @@ h1 {
 
 .spinner {
   border: 5px solid #f3f3f3;
-  border-top: 5px solid #4CAF50;
+  border-top: 5px solid #4caf50;
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -412,8 +419,12 @@ h1 {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-content p {

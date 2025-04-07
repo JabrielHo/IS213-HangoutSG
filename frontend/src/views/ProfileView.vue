@@ -24,8 +24,14 @@ const loadingStates = ref({
   joinedEvents: false,
 })
 
-const isLoading = computed(() => {
-  return Object.values(loadingStates.value).some((state) => state === true)
+const isTabLoading = computed(() => {
+  return {
+    community: loadingStates.value.communities,
+    posts: loadingStates.value.posts,
+    comments: loadingStates.value.comments,
+    hostedevents: loadingStates.value.hostedEvents,
+    joinedevents: loadingStates.value.joinedEvents,
+  }
 })
 
 const tabs = [
@@ -47,11 +53,20 @@ const navigateToCommunity = (communityName) => {
 const loadUserData = async () => {
   if (isAuthenticated.value && user.value) {
     try {
-      await fetchUserCommunities()
-      await fetchUserPosts()
-      await fetchUserComments()
-      await fetchHostedEvents()
-      await fetchJoinedEvents()
+      Promise.allSettled([
+        fetchUserCommunities(),
+        fetchUserPosts(),
+        fetchUserComments(),
+        fetchHostedEvents(),
+        fetchJoinedEvents()
+      ]).then(results => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const tabNames = ['communities', 'posts', 'comments', 'hosted events', 'joined events'];
+            console.error(`Failed to load ${tabNames[index]}:`, result.reason);
+          }
+        });
+      });
     } catch (error) {
       console.error('Error fetching user data:', error)
     }
@@ -82,7 +97,7 @@ const fetchUserCommunities = async () => {
 
     const creatorId = user.value.sub
 
-    const response = await fetch(`http://localhost:5001/api/community/creator/${creatorId}`)
+    const response = await fetch(`http://localhost:8000/api/community/creator/${creatorId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -108,7 +123,7 @@ const fetchUserPosts = async () => {
     const creatorId = user.value.sub
 
     // Step 1: Fetch posts
-    const response = await fetch(`http://localhost:5002/api/posts/author/${creatorId}`)
+    const response = await fetch(`http://localhost:8000/api/posts/author/${creatorId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -156,7 +171,7 @@ const fetchUserData = async (userIds) => {
   await Promise.all(
     userIds.map(async (userId) => {
       try {
-        const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
+        const userResponse = await fetch(`http://localhost:8000/api/users/${userId}`)
         if (userResponse.ok) {
           const userData = await userResponse.json()
           userDataMap[userId] = userData.data
@@ -174,7 +189,7 @@ const fetchCommentCounts = async (postIds) => {
   await Promise.all(
     postIds.map(async (postId) => {
       try {
-        const commentResponse = await fetch(`http://localhost:5003/api/comments/post/${postId}`)
+        const commentResponse = await fetch(`http://localhost:8000/api/comments/post/${postId}`)
         if (commentResponse.ok) {
           const commentData = await commentResponse.json()
           commentCountMap[postId] = commentData.data.comments ? commentData.data.comments.length : 0
@@ -193,7 +208,7 @@ const fetchUserComments = async () => {
     loadingStates.value.comments = true
     const authorId = user.value.sub
 
-    const response = await fetch(`http://localhost:5003/api/comments/author/${authorId}`)
+    const response = await fetch(`http://localhost:8000/api/comments/author/${authorId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -239,7 +254,7 @@ const fetchHostedEvents = async () => {
     loadingStates.value.hostedEvents = true
     const organizerId = user.value.sub
 
-    const response = await fetch(`http://localhost:5004/api/events/organizer/${organizerId}`)
+    const response = await fetch(`http://localhost:8000/api/events/organizer/${organizerId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -265,7 +280,7 @@ const fetchJoinedEvents = async () => {
     loadingStates.value.joinedEvents = true
     const userId = user.value.sub
 
-    const response = await fetch(`http://localhost:5005/api/registrations/${userId}`)
+    const response = await fetch(`http://localhost:8000/api/registrations/${userId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -278,7 +293,7 @@ const fetchJoinedEvents = async () => {
       const eventDetailsPromises = data.events.map(async (registration) => {
         try {
           const eventResponse = await fetch(
-            `http://localhost:5004/api/events/${registration.event_id}`
+            `http://localhost:8000/api/events/${registration.event_id}`
           )
           if (eventResponse.ok) {
             const eventData = await eventResponse.json()
@@ -335,10 +350,14 @@ const fetchJoinedEvents = async () => {
           v-for="tab in tabs"
           :key="tab.id"
           @click="currentTab = tab.id"
-          :class="{ active: currentTab === tab.id, disabled: isLoading }"
-          :disabled="isLoading"
+          :class="{
+            active: currentTab === tab.id,
+            disabled: isTabLoading[tab.id],
+          }"
+          :disabled="isTabLoading[tab.id]"
         >
           {{ tab.name }}
+          <span v-if="isTabLoading[tab.id]" class="tab-loader"></span>
         </button>
       </div>
 
@@ -443,6 +462,23 @@ const fetchJoinedEvents = async () => {
 .tabs button.disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.tab-loader {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 5px;
+  border: 2px solid rgba(74, 144, 226, 0.3);
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .comment-item {

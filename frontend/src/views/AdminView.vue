@@ -20,7 +20,7 @@ const fetchReports = async () => {
     isLoading.value = true;
 
     // Send the fetch request to the API
-    const response = await fetch('http://localhost:5007/api/moderation/get/', {
+    const response = await fetch('http://localhost:8000/api/moderation/get/', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ const handleBan = async (flagId) => {
   
   try {
     // Send POST request to /api/ban/content
-    const response = await fetch('http://localhost:5011/api/ban/content', {
+    const response = await fetch('http://localhost:8000/api/ban/content', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ const handleIgnore = async (flagId) => {
   console.log(`Ignore report with flag_id: ${flagId}`)
   try {
     // Send an empty POST request to the appropriate API URL
-    const response = await fetch(`http://localhost:5007/api/moderation/delete/flag/${flagId}`, {
+    const response = await fetch(`http://localhost:8000/api/moderation/delete/flag/${flagId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

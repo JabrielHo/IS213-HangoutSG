@@ -72,7 +72,7 @@ const reportPost = (post, event) => {
     reason: reason === 'Other' ? prompt('Please specify the reason:') : reason
   };
   
-  fetch('http://localhost:5007/api/moderation/report/post/' + post.post_id, {
+  fetch('http://localhost:8000/api/moderation/report/post/' + post.post_id, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -68,7 +68,7 @@ const fetchContent = async () => {
   try {
     if (props.content.post_id) {
       // Fetch post content if it's a post
-      const postResponse = await fetch(`http://localhost:5002/api/post/${props.content.post_id}`);
+      const postResponse = await fetch(`http://localhost:8000/api/post/${props.content.post_id}`);
       if (postResponse.ok) {
         const postData = await postResponse.json();
         getContentPreview.value = postData.data.content || 'No content available for this post.';
@@ -77,7 +77,7 @@ const fetchContent = async () => {
       }
     } else if (props.content.comment_id) {
       // Fetch comment content if it's a comment
-      const commentResponse = await fetch(`http://localhost:5003/api/comment/${props.content.comment_id}`);
+      const commentResponse = await fetch(`http://localhost:8000/api/comment/${props.content.comment_id}`);
       if (commentResponse.ok) {
         const commentData = await commentResponse.json();
         getContentPreview.value = commentData.data.content || 'No content available for this comment.';

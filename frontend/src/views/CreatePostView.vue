@@ -22,7 +22,7 @@ const canSubmit = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await fetch(`http://localhost:5001/api/community/name/${communityName}`)
+    const response = await fetch(`http://localhost:8000/api/community/name/${communityName}`)
     if (!response.ok) {
       throw new Error('Failed to fetch community information')
     }
@@ -62,7 +62,7 @@ const submitForm = async () => {
       author_id: authorId,
     }
 
-    const response = await fetch('http://localhost:5002/api/post', {
+    const response = await fetch('http://localhost:8000/api/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

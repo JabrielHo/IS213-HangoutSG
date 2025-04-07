@@ -320,7 +320,7 @@ const cancelReply = () => {
 
 const fetchAuthorInfo = async (authorId) => {
   try {
-    const response = await fetch(`http://localhost:5000/api/users/${authorId}`)
+    const response = await fetch(`http://localhost:8000/api/users/${authorId}`)
     
     if (response.ok) {
       const userData = await response.json()
@@ -342,7 +342,7 @@ const fetchAuthorInfo = async (authorId) => {
 const fetchCommunityInfo = async (communityId) => {
   communityLoading.value = true
   try {
-    const response = await fetch(`http://localhost:5001/api/community/${communityId}`)
+    const response = await fetch(`http://localhost:8000/api/community/${communityId}`)
 
     if (response.ok) {
       const data = await response.json()
@@ -372,7 +372,7 @@ const fetchUserData = async (userIds) => {
   await Promise.all(
     userIds.map(async (userId) => {
       try {
-        const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`)
+        const userResponse = await fetch(`http://localhost:8000/api/users/${userId}`)
         if (userResponse.ok) {
           const userData = await userResponse.json()
           userDataMap[userId] = userData.data
@@ -391,7 +391,7 @@ const fetchComments = async () => {
   commentsError.value = null
 
   try {
-    const response = await fetch(`http://localhost:5003/api/comments/post/${route.params.postId}`)
+    const response = await fetch(`http://localhost:8000/api/comments/post/${route.params.postId}`)
     if (response.ok) {
       const data = await response.json()
       let commentsData = data.data.comments || []
@@ -452,7 +452,7 @@ const submitComment = async (parentId) => {
   isSubmittingComment.value = true
 
   try {
-    const response = await fetch('http://localhost:5003/api/comment', {
+    const response = await fetch('http://localhost:8000/api/comment', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -499,7 +499,7 @@ const reportComment = async (comment, event) => {
     return;
   }
   try {
-    const response = await fetch(`http://localhost:5007/api/moderation/report/comment/${comment.comment_id}`, {
+    const response = await fetch(`http://localhost:8000/api/moderation/report/comment/${comment.comment_id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -534,7 +534,7 @@ const fetchPost = async () => {
   const postId = route.params.postId
 
   try {
-    const response = await fetch(`http://localhost:5002/api/post/${postId}`)
+    const response = await fetch(`http://localhost:8000/api/post/${postId}`)
 
     if (response.ok) {
       const data = await response.json()

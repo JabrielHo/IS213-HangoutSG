@@ -54,7 +54,7 @@ const fetchMessages = async () => {
 
   try {
     messagesLoaded.value = false
-    const res = await fetch('http://localhost:5006/api/inbox/' + user.value.sub)
+    const res = await fetch('http://localhost:8000/api/inbox/' + user.value.sub)
     if (!res.ok) {
       throw new Error(`HTTP error! Status: ${res.status}`)
     }
@@ -79,7 +79,7 @@ const deleteMessage = async (messageId) => {
   messages.value = messages.value.filter((m) => m.message_id !== messageId)
 
   try {
-    const res = await fetch(`http://localhost:5006/api/inbox/delete/${messageId}`, {
+    const res = await fetch(`http://localhost:8000/api/inbox/delete/${messageId}`, {
       method: 'POST',
     })
 
@@ -151,7 +151,7 @@ const openMessage = async (message) => {
 
 const markAsRead = async (messageId) => {
   try {
-    const res = await fetch(`http://localhost:5006/api/inbox/read/${messageId}`, {
+    const res = await fetch(`http://localhost:8000/api/inbox/read/${messageId}`, {
       method: 'POST',
     })
 

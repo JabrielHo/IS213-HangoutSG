@@ -62,6 +62,7 @@ services:
         methods:
           - GET
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
 
@@ -106,6 +107,7 @@ services:
         methods:
           - GET
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
       
@@ -130,7 +132,7 @@ services:
           
       - name: comment_specific_route
         paths:
-          - /api/comment/\d+
+          - /api/comment/
         methods:
           - GET
         strip_path: false
@@ -157,6 +159,7 @@ services:
           - /api/comment
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -168,8 +171,8 @@ services:
         strip_path: false
         preserve_host: true
 
-  - name: event_service
-    url: http://event_service:5004
+  - name: events_service
+    url: http://events_service:5004
     routes:
       - name: events_by_organizer_route
         paths:
@@ -281,6 +284,7 @@ services:
           - /api/moderation/delete/flag/
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -289,6 +293,7 @@ services:
           - /api/moderation/delete/post/
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -297,6 +302,7 @@ services:
           - /api/moderation/report/delete/comment/
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -305,6 +311,7 @@ services:
           - /api/moderation/report/post/
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -313,6 +320,7 @@ services:
           - /api/moderation/report/comment/
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -321,6 +329,7 @@ services:
           - /api/moderation/get/
         methods:
           - GET
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -332,25 +341,15 @@ services:
         strip_path: false
         preserve_host: true
 
-  - name: email_service
-    url: http://email_service:5008
-    routes:
-      - name: email_route
-        paths:
-          - /api/email
-        methods:
-          - POST
-        strip_path: false
-        preserve_host: true
-
   - name: manage_event_service
     url: http://manage_event_service:5009
     routes:
       - name: manage_events_specific_route
         paths:
-          - /api/events/\d+
+          - /api/events/
         methods:
           - DELETE
+          - OPTIONS
         strip_path: false
         preserve_host: true
           
@@ -359,25 +358,19 @@ services:
           - /api/events
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
 
   - name: register_for_event_service
     url: http://register_for_event_service:5010
     routes:
-      - name: register_internal_route
-        paths:
-          - /api/register_internal
-        methods:
-          - POST
-        strip_path: false
-        preserve_host: true
-          
       - name: register_route
         paths:
           - /api/register
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
 
@@ -389,6 +382,7 @@ services:
           - /api/ban/content
         methods:
           - POST
+          - OPTIONS
         strip_path: false
         preserve_host: true
 

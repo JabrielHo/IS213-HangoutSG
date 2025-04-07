@@ -126,7 +126,7 @@ export default {
   methods: {
     async fetchCommunities() {
       try {
-        const response = await axios.get('http://localhost:5001/api/community');
+        const response = await axios.get('http://localhost:8000/api/community');
         this.communities = response.data.data.communities;
       } catch (error) {
         console.error('Error fetching communities:', error);
@@ -145,7 +145,7 @@ export default {
         const formattedEvent = { ...this.event };
         
         console.log('Sending request to create event:', formattedEvent);
-        const response = await axios.post('http://localhost:5009/api/events', formattedEvent);
+        const response = await axios.post('http://localhost:8000/api/events', formattedEvent);
         
         console.log('Create event response:', response);
         

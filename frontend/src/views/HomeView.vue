@@ -61,7 +61,7 @@ const fetchMemberCount = async (communityId) => {
 // Fetch event count for a specific community
 const fetchEventCount = async (communityId) => {
   try {
-    const response = await fetch(`http://localhost:5004/api/events/community/${communityId}`)
+    const response = await fetch(`http://localhost:8000/api/events/community/${communityId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)
@@ -79,7 +79,7 @@ const fetchEventCount = async (communityId) => {
 const fetchCommunities = async () => {
   try {
     isLoading.value = true
-    const response = await fetch('http://localhost:5001/api/community')
+    const response = await fetch('http://localhost:8000/api/community')
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`)

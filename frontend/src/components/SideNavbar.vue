@@ -27,7 +27,7 @@ const fetchUserCommunities = async () => {
       // For each community ID, fetch details to get the name
       const communityDetailsPromises = communityIds.map(async (id) => {
         try {
-          const detailsResponse = await fetch(`http://localhost:5001/api/community/${id}`)
+          const detailsResponse = await fetch(`http://localhost:8000/api/community/${id}`)
           const detailsData = await detailsResponse.json()
           
           if (detailsData.code === 200 && detailsData.data) {
