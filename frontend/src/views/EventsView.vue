@@ -55,6 +55,7 @@
         :key="event.event_id" 
         :event="event" 
         :userId="currentUserId"
+        :isRegistered="isUserRegisteredForEvent(event.event_id)"
         @register-event="registerForEvent"
         @delete-event="confirmDeleteEvent"
       />
@@ -100,7 +101,7 @@ export default {
       loadingMessage: '',
       processingEventId: null,
       communityNameFromUrl: null,
-
+      userRegistrations: [], // New data variable to store user registrations
     };
   },
   computed: {
@@ -150,6 +151,21 @@ export default {
         this.error = 'Failed to load communities. Please try again later.';
       }
     },
+    // New method to fetch user registrations
+    async fetchUserRegistrations() {
+      if (!this.currentUserId) return;
+      
+      try {
+        const response = await axios.get(`http://localhost:5005/api/registrations/${this.currentUserId}`);
+        this.userRegistrations = response.data.events || [];
+      } catch (error) {
+        console.error('Error fetching user registrations:', error);
+      }
+    },
+    // New method to check if user is registered for a specific event
+    isUserRegisteredForEvent(eventId) {
+      return this.userRegistrations.some(registration => registration.event_id === eventId);
+    },
     filterEvents() {
       // The filtering happens automatically through the computed property
     },
@@ -162,7 +178,11 @@ export default {
         this.communityNameFromUrl = this.route.params.community
       }
       try {
-        await Promise.all([this.fetchEvents(), this.fetchCommunities()]);
+        await Promise.all([
+          this.fetchEvents(), 
+          this.fetchCommunities(),
+          this.fetchUserRegistrations() // Add this to load user registrations
+        ]);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -170,6 +190,12 @@ export default {
       }
     },
     async registerForEvent(eventId) {
+      // Check if already registered
+      if (this.isUserRegisteredForEvent(eventId)) {
+        alert('You are already registered for this event.');
+        return;
+      }
+      
       if (this.isProcessing) return;
       
       // Set processing state
@@ -186,6 +212,14 @@ export default {
         
         // Check both status code and response data for success
         if (response.data && response.data.success) {
+          // Add to local registrations to update UI immediately
+          this.userRegistrations.push({
+            event_id: eventId,
+            user_id: this.currentUserId,
+            registered_at: new Date().toISOString(),
+            registration_id: response.data.registration_id || 'temp-id'
+          });
+          
           alert('Successfully registered for event!');
         } else {
           // The request was successful but the operation failed

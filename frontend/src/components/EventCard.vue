@@ -12,9 +12,12 @@
       <p>{{ event.description }}</p>
     </div>
     <div class="card-footer">
-      <!-- Show register button only if user is not the organizer -->
+      <!-- Show registered text if user is registered -->
+      <span v-if="isRegistered" class="registered-text">Registered</span>
+      
+      <!-- Show register button only if user is not the organizer and not registered -->
       <button 
-        v-if="userId !== event.organizer_id" 
+        v-if="userId !== event.organizer_id && !isRegistered" 
         @click="$emit('register-event', event.event_id)" 
         class="register-btn"
       >
@@ -44,6 +47,10 @@ export default {
     userId: {
       type: String,
       required: true
+    },
+    isRegistered: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
@@ -101,6 +108,8 @@ export default {
 .card-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
 }
 
 .register-btn, .delete-btn {
@@ -128,5 +137,14 @@ export default {
 
 .delete-btn:hover {
   background-color: #d32f2f;
+}
+
+.registered-text {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #e8f5e9;
+  color: #4CAF50;
+  border-radius: 4px;
+  font-weight: bold;
 }
 </style>
