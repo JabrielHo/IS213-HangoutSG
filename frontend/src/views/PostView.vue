@@ -346,7 +346,7 @@ const fetchCommunityInfo = async (communityId) => {
 
     if (response.ok) {
       const data = await response.json()
-      console.log(data.data.name)
+
 
       if (data.code === 200) {
         communityName.value = data.data.name
@@ -395,7 +395,6 @@ const fetchComments = async () => {
     if (response.ok) {
       const data = await response.json()
       let commentsData = data.data.comments || []
-      console.log(data)
       // Extract unique author IDs
       const uniqueAuthorIds = [...new Set(commentsData.map(comment => comment.author_id))]
       
@@ -412,7 +411,7 @@ const fetchComments = async () => {
           status: comment.status || 'published'
         }
       })
-      console.log(processedComments)
+
       
       // Only sort top-level comments by newest first
       // Don't change the order of replies as they'll be sorted when retrieved
