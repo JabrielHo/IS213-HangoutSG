@@ -17,6 +17,7 @@
         Reply
       </button>
       <button 
+        v-if="isAuthenticated && comment.author_id !== user?.sub"
         class="btn btn-sm btn-outline-danger" 
         @click="$emit('report-comment', comment, $event)"
       >
@@ -53,6 +54,11 @@ const props = defineProps({
   },
   activeReplyId: {
     type: String,
+    default: null
+  },
+  // Add the user prop
+  user: {
+    type: Object,
     default: null
   }
 });
