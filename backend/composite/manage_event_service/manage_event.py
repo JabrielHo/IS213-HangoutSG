@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import pika
 import json
 from flask_cors import CORS
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -100,6 +101,13 @@ def create_event():
         if field not in event_data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
         
+        try:
+            # Convert event_date to datetime object and subtract 8 hours
+            event_date = datetime.fromisoformat(event_data["event_date"]) - timedelta(hours=8)
+            event_data["event_date"] = event_date.isoformat()  # Convert back to string
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use ISO 8601 (YYYY-MM-DDTHH:MM:SS)"}), 400
+            
     # Get event details
     subject = event_data["title"]
     content = event_data["description"]
