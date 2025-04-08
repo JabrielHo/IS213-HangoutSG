@@ -1,31 +1,33 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Manage Event API",
-    "description": "Composite service for managing events with notification capabilities",
+    "title": "Composite Events API",
+    "description": "API for managing composite event operations, including creation, deletion, and notifications.",
     "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "http://localhost:5009",
+      "description": "Local development server"
+    }
+  ],
   "paths": {
     "/api/events": {
       "post": {
         "summary": "Create a new event",
-        "description": "Creates a new event and sends notifications to community members",
-        "operationId": "createEvent",
-        "tags": [
-          "Events"
-        ],
+        "description": "Creates a new event and notifies community members.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EventInput"
+                "$ref": "#/components/schemas/Event"
               }
             }
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Event created successfully",
             "content": {
               "application/json": {
@@ -36,24 +38,10 @@
             }
           },
           "400": {
-            "description": "Bad request - missing required fields",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Bad request - missing or invalid parameters"
           },
           "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Internal server error"
           }
         }
       }
@@ -61,17 +49,12 @@
     "/api/events/{event_id}": {
       "delete": {
         "summary": "Delete an event",
-        "description": "Deletes an event and sends notifications to community members",
-        "operationId": "deleteEvent",
-        "tags": [
-          "Events"
-        ],
+        "description": "Deletes an event and notifies registered users.",
         "parameters": [
           {
             "name": "event_id",
             "in": "path",
             "required": true,
-            "description": "ID of the event to delete",
             "schema": {
               "type": "string"
             }
@@ -79,34 +62,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Event deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventResponse"
-                }
-              }
-            }
+            "description": "Event deleted successfully"
           },
           "404": {
-            "description": "Event not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Event not found"
           },
           "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Internal server error"
           }
         }
       }
@@ -114,82 +76,24 @@
   },
   "components": {
     "schemas": {
-      "EventInput": {
+      "Event": {
         "type": "object",
-        "required": [
-          "community_id",
-          "organizer_id",
-          "title",
-          "event_date"
-        ],
         "properties": {
-          "community_id": {
-            "type": "string",
-            "description": "ID of the community the event belongs to"
-          },
-          "organizer_id": {
-            "type": "string",
-            "description": "ID of the user organizing the event"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the event"
-          },
-          "description": {
-            "type": "string",
-            "description": "Detailed description of the event"
-          },
-          "event_date": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Date and time of the event"
-          },
-          "location": {
-            "type": "string",
-            "description": "Location where the event will take place"
-          },
-          "capacity": {
-            "type": "integer",
-            "description": "Maximum number of participants allowed"
-          }
+          "community_id": { "type": "string" },
+          "organizer_id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "location": { "type": "string" },
+          "event_date": { "type": "string", "format": "date-time" },
+          "capacity": { "type": "integer" }
         },
-        "example": {
-          "community_id": "123456",
-          "organizer_id": "user789",
-          "title": "Community Meetup",
-          "description": "Join us for our monthly community gathering",
-          "event_date": "2025-04-15T18:00:00Z",
-          "location": "Community Center",
-          "capacity": 50
-        }
+        "required": ["community_id", "organizer_id", "title", "event_date", "location", "description", "capacity"]
       },
       "EventResponse": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "ID of the created/deleted event"
-          },
-          "message": {
-            "type": "string",
-            "description": "Confirmation message"
-          }
-        },
-        "example": {
-          "id": "event123",
-          "message": "Event successfully created"
-        }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "description": "Error message"
-          }
-        },
-        "example": {
-          "error": "Missing required field: title"
+          "message": { "type": "string" },
+          "event_id": { "type": "string" }
         }
       }
     }

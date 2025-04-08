@@ -1,196 +1,100 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-      "title": "Event Management API",
-      "description": "API for managing community events.",
-      "version": "1.0.0"
-    },
-    "servers": [
-      {
-        "url": "http://localhost:5004",
-        "description": "Local development server"
-      }
-    ],
-    "paths": {
-      "/api/events": {
-        "post": {
-          "summary": "Create a new event",
-          "requestBody": {
-            "required": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "community_id": { "type": "integer" },
-                    "organizer_id": { "type": "integer" },
-                    "title": { "type": "string" },
-                    "description": { "type": "string" },
-                    "location": { "type": "string" },
-                    "event_date": { "type": "string", "format": "date" },
-                    "capacity": { "type": "integer" }
-                  }
-                }
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Event Management API",
+    "version": "1.0.0",
+    "description": "API for managing events"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5004",
+      "description": "Local server"
+    }
+  ],
+  "paths": {
+    "/api/events": {
+      "post": {
+        "summary": "Create a new event",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "community_id": { "type": "integer" },
+                  "organizer_id": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "location": { "type": "string" },
+                  "event_date": { "type": "string", "format": "date-time" },
+                  "capacity": { "type": "integer" }
+                },
+                "required": ["community_id", "organizer_id", "title", "event_date"]
               }
             }
-          },
-          "responses": {
-            "201": {
-              "description": "Event created successfully",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "message": { "type": "string" },
-                      "event_id": { "type": "integer" }
-                    }
-                  }
-                }
-              }
-            },
-            "500": { "description": "Server error" }
           }
         },
-        "get": {
-          "summary": "Get all active events",
-          "responses": {
-            "200": {
-              "description": "List of events",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "events": {
-                        "type": "array",
-                        "items": { "$ref": "#/components/schemas/Event" }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "500": { "description": "Server error" }
-          }
+        "responses": {
+          "201": { "description": "Event created successfully" },
+          "500": { "description": "Internal server error" }
         }
       },
-      "/api/events/{event_id}": {
-        "get": {
-          "summary": "Get an event by ID",
-          "parameters": [
-            {
-              "name": "event_id",
-              "in": "path",
-              "required": true,
-              "schema": { "type": "integer" }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Event details",
-              "content": {
-                "application/json": { "schema": { "$ref": "#/components/schemas/Event" } }
-              }
-            },
-            "404": { "description": "Event not found" },
-            "500": { "description": "Server error" }
-          }
-        },
-        "delete": {
-          "summary": "Soft delete an event",
-          "parameters": [
-            {
-              "name": "event_id",
-              "in": "path",
-              "required": true,
-              "schema": { "type": "integer" }
-            }
-          ],
-          "responses": {
-            "200": { "description": "Event soft deleted" },
-            "404": { "description": "Event not found" },
-            "500": { "description": "Server error" }
-          }
-        }
-      },
-      "/api/events/organizer/{organizer_id}": {
-        "get": {
-          "summary": "Get events by organizer ID",
-          "parameters": [
-            {
-              "name": "organizer_id",
-              "in": "path",
-              "required": true,
-              "schema": { "type": "integer" }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "List of events",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "events": {
-                        "type": "array",
-                        "items": { "$ref": "#/components/schemas/Event" }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "500": { "description": "Server error" }
-          }
-        }
-      },
-      "/api/events/community/{community_id}": {
-        "get": {
-          "summary": "Get events by community ID",
-          "parameters": [
-            {
-              "name": "community_id",
-              "in": "path",
-              "required": true,
-              "schema": { "type": "integer" }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "List of events",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": { "$ref": "#/components/schemas/Event" }
-                  }
-                }
-              }
-            },
-            "500": { "description": "Server error" }
-          }
+      "get": {
+        "summary": "Get all upcoming events",
+        "responses": {
+          "200": { "description": "List of upcoming events" },
+          "500": { "description": "Internal server error" }
         }
       }
     },
-    "components": {
-      "schemas": {
-        "Event": {
-          "type": "object",
-          "properties": {
-            "event_id": { "type": "integer" },
-            "community_id": { "type": "integer" },
-            "organizer_id": { "type": "integer" },
-            "title": { "type": "string" },
-            "description": { "type": "string" },
-            "location": { "type": "string" },
-            "event_date": { "type": "string", "format": "date" },
-            "created_at": { "type": "string", "format": "date-time" },
-            "capacity": { "type": "integer" }
-          }
+    "/api/events/{event_id}": {
+      "get": {
+        "summary": "Get event by ID",
+        "parameters": [
+          { "name": "event_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Event details" },
+          "404": { "description": "Event not found" },
+          "500": { "description": "Internal server error" }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete an event",
+        "parameters": [
+          { "name": "event_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Event soft deleted" },
+          "404": { "description": "Event not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/events/organizer/{organizer_id}": {
+      "get": {
+        "summary": "Get all events by organizer ID",
+        "parameters": [
+          { "name": "organizer_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "List of events organized by user" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/events/community/{community_id}": {
+      "get": {
+        "summary": "Get all upcoming events by community ID",
+        "parameters": [
+          { "name": "community_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "List of upcoming events in the community" },
+          "500": { "description": "Internal server error" }
         }
       }
     }
   }
-  
+}
