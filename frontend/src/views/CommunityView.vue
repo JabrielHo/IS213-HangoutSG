@@ -25,8 +25,8 @@ const sortedPosts = computed(() => {
   if (!posts.value.length) return []
 
   // First filter out unpublished posts
-  const publishedPosts = posts.value.filter(post => post.status !== 'unpublished')
-  
+  const publishedPosts = posts.value.filter((post) => post.status !== 'unpublished')
+
   // Then sort the remaining posts
   return publishedPosts.sort((a, b) => {
     const dateA = new Date(a.created_at)
@@ -244,7 +244,9 @@ const fetchCommentCounts = async (postIds) => {
         const commentResponse = await fetch(`http://localhost:8000/api/comments/post/${postId}`)
         if (commentResponse.ok) {
           const commentData = await commentResponse.json()
-          commentCountMap[postId] = commentData.data.comments ? commentData.data.comments.length : 0
+          commentCountMap[postId] = commentData.data.comments
+            ? commentData.data.comments.filter((comment) => comment.status !== 'unpublished').length
+            : 0
         }
       } catch (error) {
         console.error(`Error fetching comment count for post ${postId}:`, error)
@@ -274,19 +276,16 @@ const updateRefreshRate = (seconds) => {
 
 const loadInitialData = async () => {
   isLoading.value = true
-  
+
   try {
     await fetchCommunityData()
-    
+
     if (isAuthenticated.value) {
-      await Promise.all([
-        fetchPosts(),
-        checkMembershipStatus()
-      ])
+      await Promise.all([fetchPosts(), checkMembershipStatus()])
     } else {
       await fetchPosts()
     }
-    
+
     startAutoRefresh()
   } catch (err) {
     console.error('Error loading initial data:', err)
