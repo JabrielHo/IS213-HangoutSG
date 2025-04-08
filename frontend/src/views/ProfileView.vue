@@ -248,7 +248,9 @@ const fetchCommentCounts = async (postIds) => {
         const commentResponse = await fetch(`http://localhost:8000/api/comments/post/${postId}`)
         if (commentResponse.ok) {
           const commentData = await commentResponse.json()
-          commentCountMap[postId] = commentData.data.comments ? commentData.data.comments.length : 0
+          commentCountMap[postId] = commentData.data.comments
+            ? commentData.data.comments.filter((comment) => comment.status !== 'unpublished').length
+            : 0
         }
       } catch (error) {
         console.error(`Error fetching comment count for post ${postId}:`, error)
