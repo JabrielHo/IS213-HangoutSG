@@ -16,6 +16,11 @@ const comments = ref([])
 const hostedEvents = ref([])
 const joinedEvents = ref([])
 
+const showMembersModal = ref(false)
+const currentEventMembers = ref([])
+const currentEventTitle = ref('')
+const loadingMembers = ref(false)
+
 const loadingStates = ref({
   communities: false,
   posts: false,
@@ -50,6 +55,57 @@ const navigateToCommunity = (communityName) => {
   router.push(`/c/${communityName}`)
 }
 
+const openEventMembersModal = async (event) => {
+  currentEventTitle.value = event.title
+  loadingMembers.value = true
+  showMembersModal.value = true
+
+  try {
+    const response = await fetch(`http://localhost:8000/api/registrations/event/${event.event_id}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data && data.registrations) {
+      // Get user details for each registration
+      const membersWithDetails = await Promise.all(
+        data.registrations.map(async (registration) => {
+          try {
+            const userResponse = await fetch(
+              `http://localhost:8000/api/users/${registration.user_id}`
+            )
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              return {
+                ...registration,
+                username: userData.data?.username || 'Unknown User',
+                email: userData.data?.email || '',
+                picture: userData.data?.picture || '',
+              }
+            }
+            return { ...registration, username: 'Unknown User' }
+          } catch (error) {
+            console.error(`Error fetching details for user ${registration.user_id}:`, error)
+            return { ...registration, username: 'Unknown User' }
+          }
+        })
+      )
+
+      currentEventMembers.value = membersWithDetails
+    } else {
+      currentEventMembers.value = []
+    }
+  } catch (err) {
+    console.error('Error fetching event registrations:', err)
+    currentEventMembers.value = []
+  } finally {
+    loadingMembers.value = false
+  }
+}
+
 const loadUserData = async () => {
   if (isAuthenticated.value && user.value) {
     try {
@@ -58,15 +114,15 @@ const loadUserData = async () => {
         fetchUserPosts(),
         fetchUserComments(),
         fetchHostedEvents(),
-        fetchJoinedEvents()
-      ]).then(results => {
+        fetchJoinedEvents(),
+      ]).then((results) => {
         results.forEach((result, index) => {
           if (result.status === 'rejected') {
-            const tabNames = ['communities', 'posts', 'comments', 'hosted events', 'joined events'];
-            console.error(`Failed to load ${tabNames[index]}:`, result.reason);
+            const tabNames = ['communities', 'posts', 'comments', 'hosted events', 'joined events']
+            console.error(`Failed to load ${tabNames[index]}:`, result.reason)
           }
-        });
-      });
+        })
+      })
     } catch (error) {
       console.error('Error fetching user data:', error)
     }
@@ -435,7 +491,12 @@ const fetchJoinedEvents = async () => {
             You haven't created any events yet.
           </div>
           <div v-else class="events-grid">
-            <ProfileEventCard v-for="event in hostedEvents" :key="event.event_id" :event="event" />
+            <ProfileEventCard
+              v-for="event in hostedEvents"
+              :key="event.event_id"
+              :event="event"
+              @click="openEventMembersModal(event)"
+            />
           </div>
         </div>
 
@@ -456,9 +517,159 @@ const fetchJoinedEvents = async () => {
       </div>
     </div>
   </div>
+
+  <!-- Event Members Modal -->
+  <div class="modal" :class="{ show: showMembersModal }" v-if="showMembersModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Members for "{{ currentEventTitle }}"</h5>
+          <button type="button" class="btn-close" @click="showMembersModal = false"></button>
+        </div>
+        <div class="modal-body">
+          <div v-if="loadingMembers" class="text-center my-3">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-muted">Loading members...</p>
+          </div>
+          <div v-else-if="currentEventMembers.length === 0" class="text-center p-3">
+            No members have signed up for this event yet.
+          </div>
+          <div v-else class="member-list">
+            <div
+              v-for="member in currentEventMembers"
+              :key="member.registration_id"
+              class="member-item"
+            >
+              <div class="member-info">
+                <div class="member-name">{{ member.username }}</div>
+                <div class="member-date">
+                  Joined: {{ new Date(member.registered_at).toLocaleDateString() }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="showMembersModal = false">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-if="showMembersModal" class="modal-backdrop" @click="showMembersModal = false"></div>
 </template>
 
 <style scoped>
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  outline: 0;
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal-dialog {
+  position: relative;
+  width: auto;
+  margin: 1.75rem auto;
+  max-width: 500px;
+  pointer-events: none;
+}
+
+.modal-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: auto;
+  background-color: #fff;
+  border-radius: 0.3rem;
+  outline: 0;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal-header, .modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-body {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 1rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+
+.member-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-name {
+  font-weight: bold;
+}
+
+.member-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
 .tabs button.disabled {
   opacity: 0.6;
   cursor: not-allowed;

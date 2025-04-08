@@ -1,0 +1,111 @@
+{
+  "swagger": "2.0",
+  "info": { "title": "CommunityMemberAPI", "description": "", "version": "1" },
+  "basePath": "/Community_members/rest/CommunityMemberAPI",
+  "schemes": ["https"],
+  "paths": {
+    "/communitiesbymember/{UserId}": {
+      "get": {
+        "tags": ["CommunityMemberAPI"],
+        "description": "",
+        "operationId": "GetCommunitiesByMember",
+        "produces": ["application/json"],
+        "parameters": [{ "name": "UserId", "in": "path", "required": true, "type": "string", "default": "" }],
+        "responses": {
+          "200": { "description": "", "schema": { "$ref": "#/definitions/CommunityMemberAPIListResultRecord" } }
+        }
+      }
+    },
+    "/communityaddmember/{CommunityId}/{UserId}": {
+      "post": {
+        "tags": ["CommunityMemberAPI"],
+        "description": "",
+        "operationId": "AddMember",
+        "produces": ["application/json"],
+        "parameters": [
+          { "name": "CommunityId", "in": "path", "required": true, "type": "string", "default": "" },
+          { "name": "UserId", "in": "path", "required": true, "type": "string", "default": "" }
+        ],
+        "responses": { "200": { "description": "", "schema": { "$ref": "#/definitions/Result" } } }
+      }
+    },
+    "/getmember/{CommunityId}/{UserId}": {
+      "get": {
+        "tags": ["CommunityMemberAPI"],
+        "description": "",
+        "operationId": "GetSpecificMember",
+        "produces": ["application/json"],
+        "parameters": [
+          { "name": "CommunityId", "in": "path", "required": true, "type": "string", "default": "" },
+          { "name": "UserId", "in": "path", "required": true, "type": "string", "default": "" }
+        ],
+        "responses": {
+          "200": { "description": "", "schema": { "$ref": "#/definitions/CommunityMemberAPIResultRecord" } }
+        }
+      }
+    },
+    "/membersbycommunity/{CommunityId}": {
+      "get": {
+        "tags": ["CommunityMemberAPI"],
+        "description": "",
+        "operationId": "GetMembersByCommunityId",
+        "produces": ["application/json"],
+        "parameters": [{ "name": "CommunityId", "in": "path", "required": true, "type": "string", "default": "" }],
+        "responses": {
+          "200": { "description": "", "schema": { "$ref": "#/definitions/CommunityMemberAPIListResultRecord" } }
+        }
+      }
+    },
+    "/updatestatus/{CommunityId}/{UserId}": {
+      "put": {
+        "tags": ["CommunityMemberAPI"],
+        "description": "",
+        "operationId": "UpdateMemberStatus",
+        "produces": ["application/json"],
+        "parameters": [
+          { "name": "CommunityId", "in": "path", "required": true, "type": "string", "default": "" },
+          { "name": "UserId", "in": "path", "required": true, "type": "string", "default": "" }
+        ],
+        "responses": { "200": { "description": "", "schema": { "$ref": "#/definitions/Result" } } }
+      }
+    }
+  },
+  "definitions": {
+    "CommunityMemberAPI": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "community_id": { "type": "string", "default": "" },
+        "user_id": { "type": "string", "default": "" },
+        "joined_at": { "type": "string", "format": "date-time", "example": "2014-12-31T23:59:59.938Z" },
+        "status": { "type": "string", "default": "" }
+      }
+    },
+    "CommunityMemberAPIListResultRecord": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "Result": { "$ref": "#/definitions/Result" },
+        "CommunityMemberAPI": { "type": "array", "items": { "$ref": "#/definitions/CommunityMemberAPI" } }
+      }
+    },
+    "CommunityMemberAPIResultRecord": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "CommunityMemberAPI": { "$ref": "#/definitions/CommunityMemberAPI" },
+        "Result": { "$ref": "#/definitions/Result" }
+      }
+    },
+    "Result": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "Success": { "type": "boolean", "example": false },
+        "ErrorMessage": { "type": "string", "default": "" },
+        "SuccessMessage": { "type": "string", "default": "" }
+      }
+    }
+  },
+  "tags": [{ "name": "CommunityMemberAPI" }]
+}

@@ -28,7 +28,7 @@
       </div>
 
       <div class="sort-section">
-        <span>Sort by:</span>
+        <span>Sort by Creation Date:</span>
         <button
           @click="sortEvents('newest')"
           :class="{ active: sortOrder === 'newest' }"
