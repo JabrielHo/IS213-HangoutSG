@@ -1,0 +1,444 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Comment Service API",
+      "description": "API for managing comments in a social network",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "{server}",
+        "variables": {
+          "server": {
+            "default": "http://localhost:5003"
+          }
+        }
+      }
+    ],
+    "tags": [
+      {
+        "name": "Comments",
+        "description": "Operations related to comments"
+      }
+    ],
+    "paths": {
+      "/api/comment": {
+        "post": {
+          "tags": ["Comments"],
+          "summary": "Create a new comment",
+          "description": "Creates a new comment with the provided information",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentInput"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Comment created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Missing required fields",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/comments": {
+        "get": {
+          "tags": ["Comments"],
+          "summary": "Get all comments",
+          "description": "Retrieves a list of all comments",
+          "responses": {
+            "200": {
+              "description": "List of comments",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentListResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/comments/post/{post_id}": {
+        "get": {
+          "tags": ["Comments"],
+          "summary": "Get comments by post",
+          "description": "Retrieves all comments for a specific post",
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the post"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of comments for the post",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentListResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/comments/author/{author_id}": {
+        "get": {
+          "tags": ["Comments"],
+          "summary": "Get comments by author",
+          "description": "Retrieves all comments by a specific author",
+          "parameters": [
+            {
+              "name": "author_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the author"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of comments by the author",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentListResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/comment/{comment_id}": {
+        "get": {
+          "tags": ["Comments"],
+          "summary": "Get a specific comment",
+          "description": "Retrieves a comment by its ID",
+          "parameters": [
+            {
+              "name": "comment_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the comment"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Comment details",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentDetailResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Comment not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/comment/{comment_id}/status": {
+        "put": {
+          "tags": ["Comments"],
+          "summary": "Update comment status",
+          "description": "Updates the status of a comment (published/unpublished)",
+          "parameters": [
+            {
+              "name": "comment_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the comment"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusUpdate"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Comment status updated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentDetailResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid status",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Comment not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "CommentInput": {
+          "type": "object",
+          "required": ["post_id", "author_id", "content"],
+          "properties": {
+            "post_id": {
+              "type": "string",
+              "description": "ID of the post the comment belongs to"
+            },
+            "author_id": {
+              "type": "string",
+              "description": "ID of the comment author"
+            },
+            "content": {
+              "type": "string",
+              "description": "Content of the comment"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "ID of the parent comment (for replies)",
+              "nullable": true
+            }
+          }
+        },
+        "Comment": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier for the comment"
+            },
+            "post_id": {
+              "type": "string",
+              "description": "ID of the post the comment belongs to"
+            },
+            "author_id": {
+              "type": "string",
+              "description": "ID of the comment author"
+            },
+            "content": {
+              "type": "string",
+              "description": "Content of the comment"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "ID of the parent comment (for replies)",
+              "nullable": true
+            },
+            "status": {
+              "type": "string",
+              "enum": ["published", "unpublished"],
+              "description": "Status of the comment"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the comment was created"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the comment was last updated"
+            }
+          }
+        },
+        "StatusUpdate": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": ["published", "unpublished"],
+              "description": "New status value"
+            }
+          }
+        },
+        "CommentResponse": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "example": 201
+            },
+            "message": {
+              "type": "string",
+              "example": "Comment created successfully"
+            },
+            "data": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          }
+        },
+        "CommentDetailResponse": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "example": 200
+            },
+            "data": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          }
+        },
+        "CommentListResponse": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "example": 200
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "comments": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ErrorResponse": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "HTTP status code"
+            },
+            "message": {
+              "type": "string",
+              "description": "Error message"
+            }
+          }
+        }
+      }
+    }
+  }
