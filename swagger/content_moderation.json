@@ -1,0 +1,354 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Content Moderation API",
+      "description": "API for reporting and managing flagged posts and comments for content moderation",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/api/moderation/report/post/{post_id}": {
+        "post": {
+          "summary": "Report a post for inappropriate content",
+          "description": "Report a post with reasons and perform sentiment analysis on the content to check for inappropriate language.",
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the post to report"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "description": "ID of the user reporting the content"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "Content of the post being reported"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Reason for reporting the post",
+                      "example": "Inappropriate language"
+                    }
+                  },
+                  "required": ["user_id", "content"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Post successfully reported",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Post successfully reported"
+                      },
+                      "flag": {
+                        "type": "object",
+                        "properties": {
+                          "post_id": {
+                            "type": "string"
+                          },
+                          "flagged_by": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "pending"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "201": {
+              "description": "Post is appropriate and was not flagged"
+            },
+            "400": {
+              "description": "Invalid request or missing required fields"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      },
+      "/api/moderation/report/comment/{comment_id}": {
+        "post": {
+          "summary": "Report a comment for inappropriate content",
+          "description": "Report a comment with reasons and perform sentiment analysis on the content to check for inappropriate language.",
+          "parameters": [
+            {
+              "name": "comment_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the comment to report"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "description": "ID of the user reporting the content"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "Content of the comment being reported"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Reason for reporting the comment",
+                      "example": "Inappropriate language"
+                    }
+                  },
+                  "required": ["user_id", "content"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Comment successfully reported",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Comment successfully reported"
+                      },
+                      "flag": {
+                        "type": "object",
+                        "properties": {
+                          "comment_id": {
+                            "type": "string"
+                          },
+                          "flagged_by": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "pending"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "201": {
+              "description": "Comment is appropriate and was not flagged"
+            },
+            "400": {
+              "description": "Invalid request or missing required fields"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      },
+      "/api/moderation/delete/flag/{flag_id}": {
+        "post": {
+          "summary": "Delete a flag",
+          "description": "Delete a previously reported flag from the moderation system",
+          "parameters": [
+            {
+              "name": "flag_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the flag to delete"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Flag successfully deleted",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Flag successfully deleted"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Flag not found"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      },
+      "/api/moderation/get/": {
+        "get": {
+          "summary": "Get all flagged content",
+          "description": "Retrieve a list of all reported and flagged content that has not been deleted",
+          "responses": {
+            "200": {
+              "description": "Successfully retrieved reported content",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Successfully retrieved reported content"
+                      },
+                      "flagged_content": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "flag_id": {
+                              "type": "string"
+                            },
+                            "post_id": {
+                              "type": "string"
+                            },
+                            "comment_id": {
+                              "type": "string"
+                            },
+                            "flagged_by": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No flagged content found"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      },
+      "/api/moderation/get/{flag_id}": {
+        "get": {
+          "summary": "Get a flagged content by flag ID",
+          "description": "Retrieve detailed information about a flagged post or comment by its flag ID",
+          "parameters": [
+            {
+              "name": "flag_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the flag to retrieve"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successfully retrieved flagged content",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Successfully retrieved flagged content"
+                      },
+                      "post_id": {
+                        "type": "string"
+                      },
+                      "comment_id": {
+                        "type": "string"
+                      },
+                      "flagged_by": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Flag not found"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      }
+    }
+  }
+  

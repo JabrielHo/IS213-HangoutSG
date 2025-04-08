@@ -1,0 +1,92 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Email Sending API",
+      "description": "API for sending emails and storing email records in a database",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/api/email": {
+        "post": {
+          "summary": "Send an email and store it in the database",
+          "description": "Sends an email to a specified recipient and stores the email data in the database",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "to_email": {
+                      "type": "string",
+                      "format": "email",
+                      "description": "Recipient's email address"
+                    },
+                    "subject": {
+                      "type": "string",
+                      "description": "Subject of the email"
+                    },
+                    "body": {
+                      "type": "string",
+                      "description": "Body content of the email"
+                    }
+                  },
+                  "required": ["to_email", "subject", "body"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Email sent and stored successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 201
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "Email sent successfully"
+                      },
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "to_email": {
+                            "type": "string",
+                            "example": "example@example.com"
+                          },
+                          "subject": {
+                            "type": "string",
+                            "example": "Hello, World!"
+                          },
+                          "body": {
+                            "type": "string",
+                            "example": "This is a test email body."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request - missing required fields"
+            },
+            "500": {
+              "description": "Internal server error - email sending failed"
+            }
+          }
+        }
+      }
+    }
+  }
+  

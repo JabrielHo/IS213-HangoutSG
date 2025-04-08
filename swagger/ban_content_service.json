@@ -1,0 +1,160 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Content Ban API",
+      "description": "API for banning posts, comments, and notifying users about content bans. The service communicates with other microservices for content moderation and user management.",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/api/ban/content": {
+        "post": {
+          "summary": "Ban a post or comment and notify the user",
+          "description": "Bans a post or comment based on flagging and sends an email notification to the content author and flagged reporter.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "flagId": {
+                      "type": "string",
+                      "description": "The unique ID of the flag used to identify reported content."
+                    }
+                  },
+                  "required": ["flagId"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Content successfully banned and user notified",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "post 12345 deleted"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request, missing flagId or invalid content type"
+            },
+            "404": {
+              "description": "Content or user not found"
+            },
+            "500": {
+              "description": "Internal server error, failed to process content ban"
+            }
+          }
+        }
+      },
+      "/api/ban/content/{flag_id}": {
+        "parameters": [
+          {
+            "name": "flag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The unique ID of the flag to ban content"
+          }
+        ],
+        "post": {
+          "summary": "Ban flagged content based on a given flag ID",
+          "description": "This endpoint processes a flag ID, identifies the content (post or comment), bans the content, and notifies both the user and the reporter.",
+          "requestBody": {
+            "required": false,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reason": {
+                      "type": "string",
+                      "description": "Reason for banning the content"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Content successfully banned and user notified",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "example": 200
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "post 12345 deleted"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request or missing flag ID"
+            },
+            "404": {
+              "description": "Content not found for given flag ID"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      },
+      "/api/ban/content/{content_id}/status": {
+        "parameters": [
+          {
+            "name": "content_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The unique ID of the post or comment being updated"
+          }
+        ],
+        "put": {
+          "summary": "Update the status of the content to 'unpublished'",
+          "description": "This endpoint updates the status of the specified post or comment to 'unpublished' after it has been banned.",
+          "responses": {
+            "200": {
+              "description": "Content status updated to unpublished"
+            },
+            "400": {
+              "description": "Invalid content ID or status update"
+            },
+            "404": {
+              "description": "Content not found"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      }
+    }
+  }
+  
