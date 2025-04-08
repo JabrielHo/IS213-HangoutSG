@@ -69,11 +69,9 @@ const checkMembershipStatus = async () => {
     } else {
       isJoined.value = false
     }
-    isLoading.value = false
   } catch (err) {
     console.error('Error checking membership status:', err)
     isJoined.value = false
-    isLoading.value = false
   }
 }
 
