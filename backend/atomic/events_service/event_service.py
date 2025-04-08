@@ -3,6 +3,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 from event_model import db, Event
+from datetime import datetime
 
 load_dotenv()
 
@@ -53,10 +54,16 @@ def soft_delete_event(event_id):
         return jsonify({"error": str(e)}), 500
 
 
+
 @app.route("/api/events", methods=["GET"])
 def get_events():
     try:
-        events = Event.query.filter_by(is_deleted=False).all()
+        # Get current date for comparison
+        current_date = datetime.now()
+        
+        # Filter events that haven't passed yet
+        events = Event.query.filter_by(is_deleted=False).filter(Event.event_date >= current_date).all()
+        
         events_list = [
             {
                 "event_id": event.event_id,

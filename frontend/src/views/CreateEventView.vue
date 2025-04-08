@@ -42,8 +42,11 @@
           type="datetime-local" 
           id="event_date" 
           v-model="event.event_date" 
+          :min="getCurrentDateTime()"
           required
+          @change="validateEventDate"
         >
+        <small v-if="dateError" class="text-danger">{{ dateError }}</small>
       </div>
       
       <div class="form-group">
@@ -111,11 +114,12 @@ export default {
         event_date: '',
         capacity: 1,
         community_id: '',
-        organizer_id: null // Will be set in created() hook
+        organizer_id: null
       },
       communities: [],
       loading: false,
-      error: null
+      error: null,
+      dateError: ''
     };
   },
   computed: {
@@ -124,6 +128,29 @@ export default {
     }
   },
   methods: {
+    getCurrentDateTime() {
+      // Format current date and time in YYYY-MM-DDThh:mm format for datetime-local input
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    },
+    validateEventDate() {
+      const selectedDate = new Date(this.event.event_date);
+      const currentDate = new Date();
+      
+      if (selectedDate <= currentDate) {
+        this.dateError = 'Please select a future date and time';
+        return false;
+      } else {
+        this.dateError = ''; 
+        return true;
+      }
+    },
     async fetchCommunities() {
       try {
         const response = await axios.get('http://localhost:8000/api/community');
