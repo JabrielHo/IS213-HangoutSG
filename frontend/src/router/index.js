@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import { watch } from 'vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -89,37 +90,53 @@ const router = createRouter({
 
 // Add navigation guard
 router.beforeEach(async (to, from, next) => {
-  // Check if the route requires authentication
-  if (to.matched.some((record) => record.meta.requiresAuth)) {
-    const { isAuthenticated, user } = useAuth0()
+  const { user, isAuthenticated, isLoading } = useAuth0()
 
-    // If not authenticated, redirect to home page
-    if (!isAuthenticated.value) {
-      next({ name: 'home' })
-      return
-    }
-
-    // If route requires admin role, check if user has admin role
-    if (to.matched.some((record) => record.meta.requiresAdmin)) {
-      // Wait for user object to be available
-      if (!user.value) {
-        // This could happen if user info is still loading
-        // You might want to show a loading state or handle differently
-        next(false)
-        return
-      }
-
-      const userRoles = user.value['https://hangoutsg.com/roles'] || []
-      if (!userRoles.includes('admin')) {
-        // If user is not an admin, redirect to home page
-        next({ name: 'not-found' })
-        return
-      }
+  // Check if we need authentication for this route
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth === true)
+  const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin === true)
+  
+  if (!requiresAuth) {
+    return next()
+  }
+  
+  if (isLoading.value) {
+    try {
+      await new Promise((resolve, reject) => {
+        const watchStop = watch(isLoading, (loading) => {
+          if (loading === false) {
+            watchStop()
+            resolve()
+          }
+        })
+        
+        // Add timeout to avoid infinite waiting
+        setTimeout(() => {
+          watchStop()
+          reject(new Error('Auth loading timeout'))
+        }, 10000)
+      })
+    } catch (error) {
+      console.error('Auth loading error:', error)
+      return next('/')
     }
   }
+  
+  // Now check authentication
+  if (!isAuthenticated.value && requiresAuth) {
+    return next('/')
+  }
 
-  // Proceed as normal
-  next()
+  // Check admin role for routes that require it
+  if (requiresAdmin) {
+    const userRoles = user.value['https://hangoutsg.com/roles'] || []
+    if (!userRoles.includes('admin')) {
+      console.log('Access denied: Admin role required')
+      return next('/')  // Redirect to home or you could create an access denied page
+    }
+  }
+  
+  return next()
 })
 
 export default router
