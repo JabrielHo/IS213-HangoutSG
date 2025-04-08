@@ -140,7 +140,11 @@ def get_event(event_id):
 def get_events_by_community(community_id):
     """Get all events by community ID"""
     try:
-        events = db.session.query(Event).filter_by(community_id=community_id, is_deleted=False).all()
+
+        # Get current date for comparison
+        current_date = datetime.now()
+
+        events = db.session.query(Event).filter_by(community_id=community_id, is_deleted=False).filter(Event.event_date >= current_date).all()
 
         # Return empty array instead of 404
         events_data = [
