@@ -1,8 +1,10 @@
 # HangoutSG
+## Project undergoing migration from OutSystems Low Code Platform to Flask
 
 ### G10 Team 5
 
-HangoutSG aims to connect users with similar hobby interests through both online interactions and in-person meetups. The platform serves two primary purposes: facilitating online discussions through forum posts and enabling users to organize and join real-world events. The target audience consists of hobby enthusiasts across Singapore looking to connect with others sharing their interests. The platform supports diverse hobbies ranging from outdoor activities like cycling to indoor pursuits such as online games. By combining online discussions with real-world meetups, HangoutSG creates a comprehensive community experience.
+HangoutSG aims to connect users with similar hobby interests through both online interactions and in-person meetups. The platform serves two primary purposes: facilitating online discussions through forum posts and enabling users to organize and join real-world events. The target audience consists of hobby enthusiasts across Singapore looking to connect with others sharing their interests.
+
 
 ## Table of Contents
 
@@ -38,8 +40,10 @@ $ docker compose down -v
 ```
 
 ## Technical Overview Diagram
+<img src="./assets/technical_overview.png" alt="Technical Overview Diagram" />
 
 ## SOA Layer Diagram
+<img src="./assets/SOA_layer.png" alt="vuejslogo" />
 
 ## Technologies Used
 
@@ -62,6 +66,7 @@ $ docker compose down -v
     <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="sqlalchemy logo" />
     <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python logo" />
     <img src="https://img.shields.io/badge/Flask_SocketIO-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="flask socketio logo" />
+    <img src="https://img.shields.io/badge/OutSystems-FF6A00?style=for-the-badge&logo=outsystems&logoColor=white" alt="outsystems logo" />
 </p>
 
 <p align="center"><strong>API Gateway</strong></p>

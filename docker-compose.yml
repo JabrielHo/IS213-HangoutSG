@@ -1,24 +1,24 @@
 services:
-  # mysql:
-  #   image: mysql:8.0
-  #   container_name: mysql
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - ./database/inbox_service.sql:/docker-entrypoint-initdb.d/init_inbox_service.sql
-  #     - ./database/community_service.sql:/docker-entrypoint-initdb.d/init_community_service.sql
-  #     - ./database/content_moderation_service.sql:/docker-entrypoint-initdb.d/init_content_moderation_service.sql
-  #     - ./database/comment_service.sql:/docker-entrypoint-initdb.d/init_comment_service.sql
-  #     - ./database/post_service.sql:/docker-entrypoint-initdb.d/init_post_service.sql
-  #     - ./database/community_members_service.sql:/docker-entrypoint-initdb.d/init_community_members_service.sql
-  #     - ./database/email_service.sql:/docker-entrypoint-initdb.d/init_email_service.sql
-  #     - ./database/events_service.sql:/docker-entrypoint-initdb.d/init_events_service.sql
-  #     - ./database/events_registration.sql:/docker-entrypoint-initdb.d/init_events_registration.sql
-  #     - mysql_data:/var/lib/mysql
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  #   networks:
-  #     - app-network
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/inbox_service.sql:/docker-entrypoint-initdb.d/init_inbox_service.sql
+      - ./database/community_service.sql:/docker-entrypoint-initdb.d/init_community_service.sql
+      - ./database/content_moderation_service.sql:/docker-entrypoint-initdb.d/init_content_moderation_service.sql
+      - ./database/comment_service.sql:/docker-entrypoint-initdb.d/init_comment_service.sql
+      - ./database/post_service.sql:/docker-entrypoint-initdb.d/init_post_service.sql
+      - ./database/community_members_service.sql:/docker-entrypoint-initdb.d/init_community_members_service.sql
+      - ./database/email_service.sql:/docker-entrypoint-initdb.d/init_email_service.sql
+      - ./database/events_service.sql:/docker-entrypoint-initdb.d/init_events_service.sql
+      - ./database/events_registration.sql:/docker-entrypoint-initdb.d/init_events_registration.sql
+      - mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - app-network
 
   rabbitmq:
     image: rabbitmq:3-management
