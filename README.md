@@ -1,5 +1,4 @@
 # HangoutSG
-## Project undergoing migration from OutSystems Low Code Platform to Flask
 
 ### G10 Team 5
 
@@ -14,6 +13,7 @@ HangoutSG aims to connect users with similar hobby interests through both online
 4. [Technologies Used](#technologies-used)
 
 ## Getting Started
+## Project may not run as intended due to undergoing migration from OutSystems Low Code Platform to Flask
 
 ### Prerequisites
 
